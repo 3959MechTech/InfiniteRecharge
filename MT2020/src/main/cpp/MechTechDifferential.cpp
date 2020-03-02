@@ -4,16 +4,15 @@
 
 using namespace frc;
 //Constructor for the Drivetrain class
-MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, int leftslave, int imu, int solenoid) : _rm(rightmaster), 
-    _rs(rightslave), _lm(leftmaster), _ls(leftslave), _imu(imu), _shifter(solenoid)
+MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, int leftslave, int imu) : _rm(rightmaster), 
+    _rs(rightslave), _lm(leftmaster), _ls(leftslave), _imu(imu)
 {
     _wheelDiameter = 6;//6 inch wheel diameter
     _encoderTick = 2048;//Encoder tick per revolution of motor
     _wheelBase = 27;// Size of drive base from left to right
     _baseLength = 33;//Size of drive base from front to back
 
-    _gearRatioL = 20.83;
-    _gearRatioH = 9.167;
+    _gearRatio = 9.167;
 
     _rEncoderValue = 0;
     _lEncoderValue = 0;
@@ -64,9 +63,6 @@ MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, 
     _imu.SetStatusFramePeriod(PigeonIMU_StatusFrame::PigeonIMU_CondStatus_6_SensorFusion, 255);
     _imu.SetStatusFramePeriod(PigeonIMU_StatusFrame::PigeonIMU_CondStatus_11_GyroAccum, 255);
 
-    _highGear = true;
-    _shifter.Set(_highGear);
-
     _poseTimer.Start();
 
 }
@@ -101,15 +97,6 @@ void MTDifferential::ArcadeDrive(ControlMode mode ,double transVel, double rotVe
     _rm.Set(mode, (transVel-rotVel));
 }
 
-void MTDifferential::Shift(bool high)
-{
-    if(_highGear == high)
-    {
-        return;
-    }
-    _highGear = high;
-    _shifter.Set(_highGear);
-}
 
 void MTDifferential::StartMotionProfile(BufferedTrajectoryPointStream& leftStream, BufferedTrajectoryPointStream& rightStream, ControlMode mode )
 {
@@ -133,17 +120,15 @@ void MTDifferential::configMotors(TalonFXConfiguration leftMotor, TalonFXConfigu
 }
 
 
-void MTDifferential::SetGearRatio(double ratioLow, double ratioHigh)
+void MTDifferential::SetGearRatio(double ratio)
 {
-    _gearRatioL = ratioLow;
-    _gearRatioH = ratioHigh;
+    _gearRatio = ratio;
     UpdateTickScalers();
 }
 
-void MTDifferential::SetMaxVel(double maxVelLow, double maxVelHigh)
+void MTDifferential::SetMaxVel(double maxVel)
 {
-    _maxVelLow = maxVelLow;
-    _maxVelHigh = maxVelHigh;
+    _maxVel = maxVel;
     UpdateTickScalers();
 }
 void MTDifferential::SetDriveTrainData(double wheelDiameter, double wheelBase, double length)
@@ -156,10 +141,8 @@ void MTDifferential::SetDriveTrainData(double wheelDiameter, double wheelBase, d
 
 void MTDifferential::UpdateTickScalers()
 {
-    _inchPerTickHigh = MTMath::InchPerTicks(_wheelDiameter,_gearRatioH, _encoderTick);
-    _inchPerTickLow = MTMath::InchPerTicks(_wheelDiameter,_gearRatioL, _encoderTick);
-    _ticksPerInchHigh = MTMath::TicksPerInch(_wheelDiameter, _gearRatioH, _encoderTick);
-    _ticksPerInchLow = MTMath::TicksPerInch(_wheelDiameter, _gearRatioL, _encoderTick);
+    _inchPerTick = MTMath::InchPerTicks(_wheelDiameter,_gearRatio, _encoderTick);
+    _ticksPerInch = MTMath::TicksPerInch(_wheelDiameter, _gearRatio, _encoderTick);
     
     //_ticksPerInch = (ticksPerMotorRev*gearRatio)/(wheelDiameter*3.14159);
 }
@@ -168,14 +151,6 @@ void MTDifferential::SetHeadingOffset(double radians)
     _headingOffset = radians;
 }
 
-bool MTDifferential::isHighGear()
-{
-    if (_gearRatioL)
-    {
-        return true;
-    }
-        return false;
-}
 
 double MTDifferential::GetLeftEncoderPosition()
 {
@@ -200,13 +175,9 @@ void MTDifferential::UpdatePose()
 
     //update x and y position as long as we aren't doing a 0 point turn
     double l,r,d, tickScaler;
-    if(_highGear)
-    {
-        tickScaler = _inchPerTickHigh;
-    }else
-    {
-        tickScaler = _inchPerTickLow;
-    }
+    
+    tickScaler = _inchPerTick;
+    
 
     l = _lm.GetSelectedSensorPosition()*tickScaler;
     r = _rm.GetSelectedSensorPosition()*tickScaler;

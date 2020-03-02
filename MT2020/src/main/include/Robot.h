@@ -91,7 +91,7 @@ class Robot : public frc::TimedRobot {
   frc::XboxController stick3{3};
   frc::XboxController stick4{4};
 
-  MTDifferential drive{11,13,10,12,1,0};
+  MTDifferential drive{11,13,10,12,1};
   frc::Timer timer{};
   int state = 0;
 

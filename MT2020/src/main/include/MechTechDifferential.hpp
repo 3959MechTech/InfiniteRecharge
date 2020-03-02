@@ -19,9 +19,6 @@ class MTDifferential
         PigeonIMU _imu;
         
         MTPose _pose;
-
-        frc::Solenoid _shifter;
-
         frc::Timer _poseTimer{};
         
         double _wheelDiameter;//Size of wheel
@@ -32,18 +29,11 @@ class MTDifferential
         double _rEncoderValue;//latest values of encoders
         double _lEncoderValue;//latest values of encoders
 
-        double _gearRatioL;//gear ratio of gear box in low
-        double _gearRatioH;//gear ratio of gear box in high
-
-        double _inchPerTickHigh;
-        double _inchPerTickLow;
-        double _ticksPerInchHigh;
-        double _ticksPerInchLow;
-
-        bool _highGear;//are we in high gear
-
-        double _maxVelHigh;//max velocity in high gear
-        double _maxVelLow;//max velocity in low gear:
+        double _gearRatio;//gear ratio of gear box in low
+        double _inchPerTick;
+        double _ticksPerInch;
+        
+        double _maxVel;//max velocity in low gear:
 
         double _headingOffset;
 
@@ -51,7 +41,7 @@ class MTDifferential
 
     public:
         //Constructor and Destructor classes for the Mech tech Differential drive
-        MTDifferential(int rightmaster, int rightslave, int leftmaster, int leftslave, int imu, int shifter);
+        MTDifferential(int rightmaster, int rightslave, int leftmaster, int leftslave, int imu);
         ~MTDifferential();
 
         void UpdatePose();
@@ -72,13 +62,10 @@ class MTDifferential
 
 	    void configMotors(TalonFXConfiguration leftMotor, TalonFXConfiguration rightMotor);
 
-        void SetGearRatio(double ratioLow, double ratioHigh);
-        void SetMaxVel(double maxVelLow, double maxVelHigh);
+        void SetGearRatio(double ratio);
+        void SetMaxVel(double maxVel);
         void SetDriveTrainData(double wheelDiameter, double wheelBase, double length);
         void UpdateTickScalers();
-
-        void Shift(bool high = false);
-        bool isHighGear();
 
         double GetLeftEncoderPosition();
         double GetRightEncoderPosition();

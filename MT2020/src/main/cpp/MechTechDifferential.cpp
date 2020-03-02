@@ -33,8 +33,8 @@ MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, 
 
     _rs.Follow(_rm);
     _ls.Follow(_lm);
-    _rm.SetInverted(false);
-    _lm.SetInverted(true);
+    _rm.SetInverted(true);
+    _lm.SetInverted(false);
     _rs.SetInverted(InvertType::FollowMaster);
     _ls.SetInverted(InvertType::FollowMaster);
 

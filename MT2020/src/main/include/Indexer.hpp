@@ -1,7 +1,8 @@
 #pragma once
 
+#include <frc/smartdashboard/SmartDashboard.h>
+
 #include "ctre/Phoenix.h"
-#include <frc/WPILib.h>
 #include "rev/CANSparkMax.h"
 
 class Indexer

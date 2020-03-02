@@ -1,12 +1,10 @@
 #pragma once
 
-#include <frc/WPILib.h>
 #include <ctre/phoenix.h>
 #include <string>
-#include <frc/TimedRobot.h>
 #include <frc/smartdashboard/SendableChooser.h>
 #include <Rev/CANSparkMax.h>
-#include "rev/ControlType.h"
+#include <rev/ControlType.h>
 
 using namespace frc;
 class Feeder

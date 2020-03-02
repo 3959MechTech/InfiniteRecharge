@@ -1,24 +1,28 @@
 #pragma once
 
 #include <string>
+#include <thread>
+#include <mutex>
 
 #include <frc/TimedRobot.h>
 #include <frc/smartdashboard/SendableChooser.h>
-#include "MechTechDifferential.hpp"
-#include "MTPath.h"
-#include "thread"
-#include "mutex"
-#include "frc/SerialPort.h"
+#include <frc/SerialPort.h>
 #include <frc/XboxController.h>
 #include <frc/Notifier.h>
-#include "Indexer.hpp"
+#include <frc/Compressor.h>
+
 #include <rev/CANSparkMax.h>
+
+#include "MechTechDifferential.hpp"
+#include "MTPath.h"
+#include "Indexer.hpp"
 #include "Feeder.h"
 #include "Periscope.h"
 #include "MTTurretShooter.h"
 
 #include "networktables/NetworkTable.h"
 #include "networktables/NetworkTableInstance.h"
+
 
 
 /*

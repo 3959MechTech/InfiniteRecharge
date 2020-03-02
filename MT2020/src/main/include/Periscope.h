@@ -13,7 +13,7 @@ class Periscope
      
         enum PPos
         {
-            Home = 0,
+            Down = 0,
             Low = 1,
             Level = 2,
             High = 3
@@ -24,6 +24,9 @@ private:
 
     WPI_TalonSRX _left;
     WPI_TalonSRX _right;
+
+    bool _homed;
+    bool _UsePID;
 
     double posVals[MaxPos][3]; //0 = position, 1 = ramp, 2 = max speed
 
@@ -39,6 +42,8 @@ private:
   
    PPos GetPPos(){return current;};
    double GetError();
+
+   bool Home();
   
    double GetMaxSpeed(PPos);
    double GetSetPoint();
@@ -50,6 +55,9 @@ private:
 
    void SetMotorSpeed(double speed);
    void SetPosition(double pos);
+
+    void sendData(std::string name = "Periscope");
+
 };
 
 

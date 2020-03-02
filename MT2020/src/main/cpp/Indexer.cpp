@@ -64,3 +64,8 @@ void Indexer::SetM3(double speed)
 {
     _bI.Set(speed);
 }
+
+void Indexer::SendData(std::string name)
+{
+    
+}

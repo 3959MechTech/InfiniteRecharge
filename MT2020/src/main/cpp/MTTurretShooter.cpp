@@ -14,8 +14,8 @@ MTTurretShooter::MTTurretShooter(int leftMotor, int rightMotor, int turretMotor,
     _turretMotor(turretMotor),
     _imu(imu)
 {
-    _autoTrack = false;
-    _threadRunning = false;
+//    _autoTrack = false;
+//    _threadRunning = false;
     
     _lm.Follow(_rm);
 
@@ -23,7 +23,7 @@ MTTurretShooter::MTTurretShooter(int leftMotor, int rightMotor, int turretMotor,
     _lm.SetInverted(InvertType::OpposeMaster);//could be FollowMaster
     
     _rm.Config_kF(0,.04778,0);
-    _rm.Config_kP(0,.03,0);
+    _rm.Config_kP(0,.06,0);
     _rm.Config_kI(0,.0,0);
     _rm.Config_kD(0,.0,0);
 
@@ -35,7 +35,10 @@ MTTurretShooter::MTTurretShooter(int leftMotor, int rightMotor, int turretMotor,
     turretMotorConfig.primaryPID.selectedFeedbackCoefficient = 3600.0/8192.0;
     turretMotorConfig.primaryPID.selectedFeedbackSensor = FeedbackDevice::RemoteSensor0;
     turretMotorConfig.slot0.kP = 1.0;
-
+    turretMotorConfig.slot0.kI = .01;
+    turretMotorConfig.slot0.maxIntegralAccumulator = .2;
+    turretMotorConfig.slot0.allowableClosedloopError = 4;
+    
     turretMotorConfig.motionAcceleration = 8000;
     turretMotorConfig.motionCruiseVelocity = 900;
 
@@ -43,6 +46,9 @@ MTTurretShooter::MTTurretShooter(int leftMotor, int rightMotor, int turretMotor,
     
 
     _turretMotor.ConfigAllSettings(turretMotorConfig);
+
+    _imu.SetYaw(0);
+
 
     //Turn down un-needed data on Can Bus
     _lm.SetStatusFramePeriod(motorcontrol::StatusFrame::Status_1_General_, 255);
@@ -52,6 +58,7 @@ MTTurretShooter::MTTurretShooter(int leftMotor, int rightMotor, int turretMotor,
     _imu.SetStatusFramePeriod(PigeonIMU_StatusFrame::PigeonIMU_CondStatus_11_GyroAccum, 255);
 
     _imu.SetFusedHeading(0);
+    
 
 }
 
@@ -66,31 +73,80 @@ void MTTurretShooter::shoot(double speed)
     
 }
 
- void MTTurretShooter::spin(double speed)
+void MTTurretShooter::zeroTurret()
+{
+    _imu.SetYaw(0);
+}
 
+void MTTurretShooter::spin(double speed)
 {
     _turretMotor.Set(ControlMode::PercentOutput, speed);
 }
 void MTTurretShooter::setWheelSpeed(double speed)
 {
     _targetWheelSpeed = speed;
-    _rm.Set(ControlMode::PercentOutput, _targetWheelSpeed);
+    _rm.Set(ControlMode::Velocity, _targetWheelSpeed);
     
 }
 
 void MTTurretShooter::sendData(std::string name)
 {
     frc::SmartDashboard::PutNumber(name + " heading", _imu.GetFusedHeading());
+    switch(_imu.GetState())
+    {
+        case PigeonIMU::PigeonState::Initializing: 
+            frc::SmartDashboard::PutString(name + " State", "Init");
+            break;
+        case PigeonIMU::PigeonState::NoComm:  
+            frc::SmartDashboard::PutString(name + " State", "NoComm");
+            break;
+        case PigeonIMU::PigeonState::Ready:  
+            frc::SmartDashboard::PutString(name + " State", "Ready");
+            break;
+        case PigeonIMU::PigeonState::UserCalibration:  
+            frc::SmartDashboard::PutString(name + " State", "UserCalibration");
+            break;
+        default:
+            frc::SmartDashboard::PutString(name + " State", "unk");
+
+    }
+    //frc::SmartDashboard::PutNumber(name + " heading", _imu.GetState().toString());
+    frc::SmartDashboard::PutNumber(name + " Turret heading", _turretMotor.GetSelectedSensorPosition());
+    frc::SmartDashboard::PutNumber(name + " Turret Target", _turretMotor.GetClosedLoopTarget());
+    frc::SmartDashboard::PutNumber(name + " Turret Error", _turretMotor.GetClosedLoopError());
+    frc::SmartDashboard::PutNumber(name + " Speed", _rm.GetSelectedSensorVelocity());
+    frc::SmartDashboard::PutNumber(name + " Speed Error", _rm.GetClosedLoopError());
+    frc::SmartDashboard::PutNumber(name + " Shooter Temp (C)", _rm.GetTemperature());
+
 
 } // namespace name
 
-void MTTurretShooter::updateTargetHeading(double degrees)
+void MTTurretShooter::updateTargetHeading(double offset)
 {
-    _targetHeading = degrees*10.0;
+    //if(offset>=0.0)
+    //{
+        _targetHeading = _turretMotor.GetSelectedSensorPosition() - offset*10.0;
+    /*}else
+    {
+        _targetHeading = 1800.0 - offset*10.0 ;
+    }*/
+    if(_targetHeading > -900 && _targetHeading <900)
+    {
+        _turretMotor.Set(ControlMode::Position, _targetHeading);
+    }
 }
 
-void MTTurretShooter::track(MTPoseData drivePose)
+void MTTurretShooter::track(MTPoseData drivePose, double x_angle, double y_angle)
 {
+    double turretHeading = _turretMotor.GetSelectedSensorPosition();
+    double angle = turretHeading - x_angle*10;
+    angle -= MTMath::RadiansToDegrees(MTMath::CleanAngle(drivePose.phi-M_PI));
+
+    //if(angle<_turretRightLimit && angle > _turretLeftLimit)
+    {
+        _targetHeading = _turretMotor.GetSelectedSensorPosition() - x_angle*10.0;
+        _turretMotor.Set(ControlMode::MotionMagic, _targetHeading);
+    }
 
 }
 

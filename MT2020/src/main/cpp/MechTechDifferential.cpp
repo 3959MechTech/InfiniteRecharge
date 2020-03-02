@@ -43,8 +43,8 @@ MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, 
     _lm.Config_kF(0,.045);
     _rm.Config_kF(0,.045);
 
-    _lm.Config_kP(0,.15);//.15
-    _rm.Config_kP(0,.15);
+    _lm.Config_kP(0,.1);//.15
+    _rm.Config_kP(0,.1);
 
     _lm.Config_kI(0,.0);
     _rm.Config_kI(0,.0);
@@ -96,9 +96,9 @@ void MTDifferential::SetSpeed(ControlMode mode ,double leftSpeed, double rightSp
 }
 void MTDifferential::ArcadeDrive(ControlMode mode ,double transVel, double rotVel)
 {
-    rotVel = rotVel/2.0;
-    _lm.Set(mode, (transVel-rotVel));
-    _rm.Set(mode, (transVel+rotVel));
+    rotVel = -rotVel/2.0;
+    _lm.Set(mode, (transVel+rotVel));
+    _rm.Set(mode, (transVel-rotVel));
 }
 
 void MTDifferential::Shift(bool high)
@@ -287,14 +287,14 @@ void MTDifferential::SetPose(MTPoseData pose)
     _pose.Update(pose);
 }
 
-void MTDifferential::SendData()
+void MTDifferential::SendData(std::string name)
 {
 
     MTPoseData pos = GetPose();
 
     frc::SmartDashboard::PutNumber("Drive Pose X", pos.x);
     frc::SmartDashboard::PutNumber("Drive Pose Y", pos.y);
-    frc::SmartDashboard::PutNumber("Drive Pose phi", pos.phi);
+    frc::SmartDashboard::PutNumber("Drive Pose phi (D)", MTMath::RadiansToDegrees( pos.phi));
     frc::SmartDashboard::PutNumber("Drive Pose vX", pos.vx);
     frc::SmartDashboard::PutNumber("Drive Pose vY", pos.vy);
     frc::SmartDashboard::PutNumber("Drive Pose w", pos.w);
@@ -303,7 +303,25 @@ void MTDifferential::SendData()
     frc::SmartDashboard::PutNumber("Drive Pose AA", pos.aa);
     frc::SmartDashboard::PutNumber("Drive Pose timestamp", pos.timestamp);
 
-    
+    switch(_imu.GetState())
+    {
+        case PigeonIMU::PigeonState::Initializing: 
+            frc::SmartDashboard::PutString(name + " State", "Init");
+            break;
+        case PigeonIMU::PigeonState::NoComm:  
+            frc::SmartDashboard::PutString(name + " State", "NoComm");
+            break;
+        case PigeonIMU::PigeonState::Ready:  
+            frc::SmartDashboard::PutString(name + " State", "Ready");
+            break;
+        case PigeonIMU::PigeonState::UserCalibration:  
+            frc::SmartDashboard::PutString(name + " State", "UserCalibration");
+            break;
+        default:
+            frc::SmartDashboard::PutString(name + " State", "unk");
+
+    }
+
     frc::SmartDashboard::PutNumber("Drive IMU Heading", _imu.GetFusedHeading());
 
     frc::SmartDashboard::PutNumber("Left Drive Motor Speed", _lm.GetSelectedSensorVelocity());

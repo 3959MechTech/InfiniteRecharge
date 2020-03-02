@@ -21,16 +21,19 @@ class MTTurretShooter {
 
   WPI_TalonSRX _turretMotor;
 
+  double _turretLeftLimit =  -900.0;
+  double _turretRightLimit =  900.0;
+
   frc::SerialPort _serialPort{frc::SerialPort::kMXP};
   PigeonIMU _imu;
 
-
+/*
   std::thread *_thread;
   std::mutex _mutex;
   bool _autoTrack; 
   bool _threadRunning;
   double threadPeriod = 10000;//10ms
-
+*/
   double _targetHeading;
   double _targetWheelSpeed;
 
@@ -43,9 +46,11 @@ class MTTurretShooter {
   void setWheelSpeed(double speed);
   void sendData(std::string name = "Shooter");
 
+  void zeroTurret();
+
   void updateTargetHeading(double degrees);
   void advTrack();
-  void track(MTPoseData drivePose);
+  void track(MTPoseData drivePose, double x_angle, double y_angle);
   
   void GetHeading();
 

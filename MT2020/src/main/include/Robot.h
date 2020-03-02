@@ -44,10 +44,10 @@ Right Shooter (Device ID 21)
 Shooter Turret (Device ID 22)
 
 DRIVETRAIN
-LeftMaster (Device ID 11)
-LeftSlave (Device ID 13)
-RightMaster (Device ID 10)
-RightSlave (Device ID 12)
+LeftMaster (Device ID 10)
+LeftSlave (Device ID 12)
+RightMaster (Device ID 11)
+RightSlave (Device ID 13)
 
 OTHER DEVICES
 PCM (Device ID 5)
@@ -72,8 +72,12 @@ class Robot : public frc::TimedRobot {
  private:
 
   void updatePose();
+  void autoTrack();
+
   void executeTasks();
   void devStick();
+
+
 
   frc::SendableChooser<std::string> m_chooser;
   const std::string kAutoNameDefault = "Default";
@@ -85,8 +89,9 @@ class Robot : public frc::TimedRobot {
   frc::XboxController stick{0};
   frc::XboxController stick2{1};
   frc::XboxController stick3{3};
+  frc::XboxController stick4{4};
 
-  MTDifferential drive{10,12,11,13,0,0};
+  MTDifferential drive{11,13,10,12,1,0};
   frc::Timer timer{};
   int state = 0;
 
@@ -101,8 +106,16 @@ class Robot : public frc::TimedRobot {
 
   frc::Notifier *_PoseThread;
   frc::Timer _PoseTimer{};
-  std::mutex _poseThreadMutex;
+  std::shared_timed_mutex _poseThreadMutex;
+
   double _poseThreadPeriod;
+
+  frc::Notifier *_shooterThread;
+  frc::Timer _shooterTimer{};
+  std::shared_timed_mutex _shooterThreadMutex;
+  bool _autotrack ;
+  double _shooterThreadPeriod;
+  double _targetAngle;
 
   Periscope periscope{50,51};
 
@@ -110,9 +123,11 @@ class Robot : public frc::TimedRobot {
 
   Indexer indexer{30,31,32};
 
-  MTTurretShooter shooter{20,21,22,1};
+  MTTurretShooter shooter{20,21,22,2};
 
-  frc::SerialPort cam{115200, frc::SerialPort::kMXP};
+  double shooterSpeedSelect;
+
+  //frc::SerialPort cam{115200, frc::SerialPort::kMXP};
   //frc::SerialPort cam1{9600, frc::SerialPort::kUSB1};
   //frc::SerialPort cam2{9600, frc::SerialPort::kUSB2};
 

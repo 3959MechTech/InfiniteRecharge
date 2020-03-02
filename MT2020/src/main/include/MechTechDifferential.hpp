@@ -68,7 +68,7 @@ class MTDifferential
         bool IsMotionProfileFinished();
 
         void ResetEncoders();
-        void SendData();
+        void SendData(std::string name = "Drive");
 
 	    void configMotors(TalonFXConfiguration leftMotor, TalonFXConfiguration rightMotor);
 

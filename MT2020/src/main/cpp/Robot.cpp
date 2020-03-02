@@ -73,11 +73,16 @@ void Robot::RobotInit()
     _PoseThread = new frc::Notifier(&Robot::updatePose, this);
     _PoseThread->StartPeriodic(.010);
     _PoseTimer.Start();
+
+    _shooterThread = new frc::Notifier(&Robot::autoTrack, this);
+    _shooterThread->StartPeriodic(.010);
+    _shooterTimer.Start();
     
+    shooterSpeedSelect = 0.0;
+    _autotrack = true;
 
-
-    cam.EnableTermination();
-    cam.SetReadBufferSize(16);
+    //cam.EnableTermination();
+    //cam.SetReadBufferSize(16);
     //cam.SetTimeout(1.0);
     //cam1.DisableTermination();
     //cam1.SetReadBufferSize(5);
@@ -111,15 +116,16 @@ void Robot::sendData()
         //data[recved] = '\0';
         //frc::SmartDashboard::PutNumber("cam Data len", recved);
         //frc::SmartDashboard::PutString("cam Data", std::string(data));
-        int rxLen = cam.GetBytesReceived();
-        frc::SmartDashboard::PutNumber("cam Data len", rxLen);
-
+        //int rxLen = cam.GetBytesReceived();
+        //frc::SmartDashboard::PutNumber("cam Data len", rxLen);
+/*
         if(rxLen>12)
         {
             char* buf = new char[14];
             cam.Read(buf, 14);
             frc::SmartDashboard::PutString("UART", buf);
         }
+*/
 /*
         recved = cam1.Read(data, 127);
         data[recved] = '\0';
@@ -131,55 +137,117 @@ void Robot::sendData()
         frc::SmartDashboard::PutNumber("cam2 Data len", recved);
         frc::SmartDashboard::PutString("cam2 Data", std::string(data));
 */
-        double x = NetTable->GetNumber("tx", 0.0);
-        frc::SmartDashboard::PutNumber("limelight X", x);
+        
+        frc::SmartDashboard::PutNumber("limelight X", NetTable->GetNumber("tx", 0.0));
+        frc::SmartDashboard::PutNumber("limelight Y", NetTable->GetNumber("ty", 0.0));
+        frc::SmartDashboard::PutNumber("limelight area", NetTable->GetNumber("ta", 0.0));
+        frc::SmartDashboard::PutNumber("limelight skew", NetTable->GetNumber("ts", 0.0));
 
+        double targetangle;
+        _shooterThreadMutex.lock_shared();
+        targetangle = _targetAngle;
+        _shooterThreadMutex.unlock_shared();
+
+        frc::SmartDashboard::PutNumber("Angle to Target", targetangle);
 
         double posePeriod;
-        _poseThreadMutex.lock();
+        _poseThreadMutex.lock_shared();
         posePeriod = _poseThreadPeriod;
-        _poseThreadMutex.unlock();
+        _poseThreadMutex.unlock_shared();
         frc::SmartDashboard::PutNumber("Pose Thread Period", posePeriod);
 
+        shooter.sendData();
+        indexer.SendData();
+        periscope.sendData();
         feeder.SendData();
         drive.SendData();
+        frc::SmartDashboard::PutNumber("auto state", state);
+        frc::SmartDashboard::PutNumber("auto Timer", timer.Get());
         frc::SmartDashboard::PutNumber("Telemetery Thread Period", _telemetryTimer.Get());
         _telemetryTimer.Reset();       
         usleep(10000);//sleep for 20ms aka 20,000 us
     }
     
 }
+void Robot::autoTrack()
+{
+    MTPoseData pose = drive.GetPose();
+    bool track = false; 
+    _shooterThreadMutex.lock();
+    track = _autotrack;
+    _targetAngle = std::atan2(226.81-pose.y,0-pose.x)-pose.phi;
+    _shooterThreadMutex.unlock();
+
+    if(track)
+    {
+        shooter.updateTargetHeading(NetTable->GetNumber("tx", 0.0));
+    }
+    
+    //shooter.track(pose, NetTable->GetNumber("tx", 0.0), NetTable->GetNumber("ty", 0.0));
+
+}
 
 void Robot::devStick()
 {
     if(stick3.GetXButton())
     {
-        indexer.DirectDrive(-stick3.GetY(frc::GenericHID::kLeftHand)/2.0,
-                            -stick3.GetY(frc::GenericHID::kLeftHand)/2.0,
-                            -stick3.GetY(frc::GenericHID::kLeftHand));
+        indexer.DirectDrive(.5,.3,1.0);
     }
 
     if(stick3.GetAButton())
     {
-        indexer.SetM1(-stick3.GetY(frc::GenericHID::kLeftHand));
+        shooter.setWheelSpeed(18000.0);
+        shooterSpeedSelect = 18000.0;
+        //periscope.SetPPos(Periscope::Down);
+        //shooter.zeroTurret();
     }
 
     if(stick3.GetBButton())
     {
-        indexer.SetM2(-stick3.GetY(frc::GenericHID::kLeftHand));
+        shooter.setWheelSpeed(15000.0);
+        shooterSpeedSelect = 15000.0;
+        //periscope.SetPPos(Periscope::Low);
     }
 
     if(stick3.GetYButton())
     {
-        indexer.SetM3(-stick3.GetY(frc::GenericHID::kLeftHand));
+        shooter.setWheelSpeed(13500.0);
+        shooterSpeedSelect = 13500.0;
+        //periscope.SetPPos(Periscope::High);
     }
+
+    if(stick3.GetStartButtonPressed())
+    {
+        shooter.setWheelSpeed(0.0);
+    }
+    if(stick3.GetBackButtonPressed())
+    {
+        shooter.setWheelSpeed(0.0);
+        shooterSpeedSelect = 0.0;
+        indexer.DirectDrive(0,0,0);
+        feeder.Feed(0);
+    }
+
+    if(stick3.GetBumperPressed(frc::GenericHID::kRightHand))
+    {
+        shooterSpeedSelect += 100.0;
+        shooter.setWheelSpeed(shooterSpeedSelect);
+    }
+    
+    if(stick3.GetBumperPressed(frc::GenericHID::kLeftHand))
+    {
+        shooterSpeedSelect -= 100.0;
+        shooter.setWheelSpeed(shooterSpeedSelect);
+    }
+
+    
 
     if(stick3.GetTriggerAxis(frc::GenericHID::kRightHand)>.1)
     {
-        shooter.setWheelSpeed(stick3.GetTriggerAxis(frc::GenericHID::kRightHand)/2.0);
+        shooter.setWheelSpeed(stick3.GetTriggerAxis(frc::GenericHID::kRightHand)*19000.0);
     }else
     {  
-        shooter.setWheelSpeed(0);
+        //shooter.setWheelSpeed(0);
     }
     
     
@@ -190,10 +258,20 @@ void Robot::devStick()
     {
         feeder.Feed(0);
     }
-    
-   
-    
-    periscope.SetMotorSpeed(-stick3.GetY(frc::GenericHID::kRightHand));
+
+    if(!_autotrack)
+    {
+        shooter.spin(stick3.GetX(frc::GenericHID::kRightHand));
+    }
+    /*
+    if(periscope.Home())
+    {
+        periscope.SetMotorSpeed(-stick3.GetY(frc::GenericHID::kRightHand));
+    }
+    */
+    //periscope.SetMotorSpeed(-stick3.GetY(frc::GenericHID::kRightHand));
+    //shooter.spin(stick3.GetX(frc::GenericHID::kLeftHand)/2.0);
+    //autoTrack();
 }
 
 void Robot::executeTasks()
@@ -232,7 +310,7 @@ void Robot::executeTasks()
         rX = 0.0;
     }
 
-    drive.ArcadeDrive(ControlMode::Velocity, lY*20000.0, rX*20000.0);
+    drive.ArcadeDrive(ControlMode::PercentOutput, lY, rX);
 
     if(stick.GetStartButtonPressed())
     {
@@ -253,7 +331,7 @@ void Robot::executeTasks()
     {
         feeder.Feed(stick2.GetTriggerAxis(frc::GenericHID::kRightHand)*.75);
     }else{
-        feeder.Feed(0.0);
+        //feeder.Feed(0.0);
     }
 
     if(stick2.GetTriggerAxis(frc::GenericHID::kLeftHand))
@@ -283,6 +361,12 @@ void Robot::RobotPeriodic() {
     smTimer.Reset();
     //drive.SendData();
   }
+  if(stick.GetBackButtonPressed())
+  {
+      _shooterThreadMutex.lock();
+      _autotrack = false;
+      _shooterThreadMutex.unlock();
+  }
 
 }
 
@@ -309,8 +393,8 @@ void Robot::TeleopInit() {
 
 void Robot::TeleopPeriodic() {
   
-    devStick();
-    executeTasks();
+    //devStick();
+    //executeTasks();
     
     //frc::SmartDashboard::PutNumber("rv", rv);
 
@@ -318,12 +402,15 @@ void Robot::TeleopPeriodic() {
     //B button = right turn
     //X button = left turn
     //Y button = straight
-/*
-    if(stick.GetAButton())
+
+    if(stick4.GetAButton())
     {
-        if(stick.GetAButtonPressed())
+        if(stick4.GetAButtonPressed())
         {
+            timer.Start();
             timer.Reset();//reset timer
+            shooter.setWheelSpeed(16000);
+            //indexer.DirectDrive(.5,.3,1.0);
             //zero the encoders and state machine variable
             state = 0;
             drive.ResetEncoders();
@@ -336,23 +423,34 @@ void Robot::TeleopPeriodic() {
         {
         case 0: //start traj
             drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-            state++;
+            if(timer.Get()>2.5){indexer.DirectDrive(.5,.3,1.0);}
+            if(timer.Get()>4.5){state++;}
+            //state++;
             break;
         case 1: //wait for traj to finish
+            feeder.Feed(.6);
             if(drive.IsMotionProfileFinished()){state++;}
+            indexer.DirectDrive(0,0,0);
+            shooter.setWheelSpeed(17000);
             break;
         case 2: //prepare to reverse traj
-            tragTool.GetStreamFromArray(left_bufferedStream, TrenchRun_TrenchRun2Points, TrenchRun_TrenchRun2Len, true, false);
-            tragTool.GetStreamFromArray(right_bufferedStream, TrenchRun_TrenchRun2Points, TrenchRun_TrenchRun2Len, false, false);
+            tragTool.GetStreamFromArray(left_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, true, false);
+            tragTool.GetStreamFromArray(right_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, false, false);
             timer.Reset();
             timer.Start();
             state++;
             break;
         case 3: 
-            if(timer.Get()>2.0){state++;}//wait 2 seconds
+            if(timer.Get()>.20){state++;}//wait 2 seconds
+            {indexer.DirectDrive(.5,.3,1.0);} 
             break;
         case 4: //start rev traj
-            drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
+            drive.StartMotionProfile(right_bufferedStream, left_bufferedStream, ControlMode::MotionProfile); 
+            timer.Reset();
+            state++;
+            break;
+        case 5: //start rev traj
+            
             state++;
             break;
         default:
@@ -362,21 +460,22 @@ void Robot::TeleopPeriodic() {
     }else
     {
 
-        if(stick.GetYButton())
+        if(stick4.GetYButton())
         {
-            if(stick.GetYButtonPressed())
+            if(stick4.GetYButtonPressed())
             {
                 timer.Reset();//reset timer
                 state = 0;
                 drive.ResetEncoders();
                 tragTool.GetStreamFromArray(left_bufferedStream, Power10_Powerpath1Points, Power10_Powerpath1Len, true, true);
                 tragTool.GetStreamFromArray(right_bufferedStream, Power10_Powerpath1Points, Power10_Powerpath1Len, false, true);
+                shooter.setWheelSpeed(16000);
             }
             switch (state)
             {
             case 0: //start traj
                 drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-                state++;
+                
                 break;
             case 1: //wait for traj to finish
                 if(drive.IsMotionProfileFinished()){state++;}
@@ -449,10 +548,11 @@ void Robot::TeleopPeriodic() {
 
         }else
         {
-            drive.SetSpeed(ControlMode::PercentOutput, lv, rv);
+            executeTasks();
+            devStick();
         }
     }
-*/
+//*/
     
 }
 

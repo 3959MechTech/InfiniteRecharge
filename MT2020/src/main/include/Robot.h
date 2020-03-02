@@ -99,7 +99,7 @@ class Robot : public frc::TimedRobot {
   frc::Timer timer{};
   int state = 0;
 
-  MTPath tragTool{6.0, 2048.0,9.167};//6" wheel diameter, encoder resolution 2048, gear ratio= 20.83/9.167
+  MTPath tragTool{6.0, 2048.0,10.3896};//6" wheel diameter, encoder resolution 2048, gear ratio= 10.3896
   BufferedTrajectoryPointStream left_bufferedStream{};
 	BufferedTrajectoryPointStream right_bufferedStream{};
 

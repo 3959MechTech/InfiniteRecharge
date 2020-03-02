@@ -12,7 +12,7 @@ MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, 
     _wheelBase = 27;// Size of drive base from left to right
     _baseLength = 33;//Size of drive base from front to back
 
-    _gearRatio = 9.167;
+    _gearRatio = 10.3896;
 
     _rEncoderValue = 0;
     _lEncoderValue = 0;

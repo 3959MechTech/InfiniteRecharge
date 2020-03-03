@@ -13,13 +13,7 @@
 #include <frc/smartdashboard/SmartDashboard.h>
 #include "TrenchRun_TrenchRun1.h"
 #include "TrenchRun_TrenchRun2.h"
-#include "Power10_Powerpath1.h"
-#include "Power10_Powerpath2.h"
-#include "Power10_Powerpath3.h"
-#include "Power10_Powerpath4.h"
-#include "Power10_Powerpath5.h"
-#include "Power10_Powerpath6.h"
-#include "Power10_Powerpath7.h"
+
 
 #include "AutoPaths/Straight_f1.h"
 
@@ -506,98 +500,8 @@ void Robot::TeleopPeriodic() {
         
     }else
     {
-
-        if(stick4.GetYButton())
-        {
-            if(stick4.GetYButtonPressed())
-            {
-                timer.Reset();//reset timer
-                state = 0;
-                drive.ResetEncoders();
-                tragTool.GetStreamFromArray(left_bufferedStream, Power10_Powerpath1Points, Power10_Powerpath1Len, true, true);
-                tragTool.GetStreamFromArray(right_bufferedStream, Power10_Powerpath1Points, Power10_Powerpath1Len, false, true);
-                shooter.setWheelSpeed(16000);
-            }
-            switch (state)
-            {
-            case 0: //start traj
-                drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-                
-                break;
-            case 1: //wait for traj to finish
-                if(drive.IsMotionProfileFinished()){state++;}
-                break;
-            case 2: //prepare traj and start next traj
-                tragTool.GetStreamFromArray(left_bufferedStream, Power10_Powerpath2Points, Power10_Powerpath2Len, true, false);
-                tragTool.GetStreamFromArray(right_bufferedStream, Power10_Powerpath2Points, Power10_Powerpath2Len, false, false);
-                drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-                state++;
-                break;
-            case 3: //wait for traj to finish
-                if(drive.IsMotionProfileFinished()){state++;}
-                break;
-            case 4: //start rev traj
-                timer.Reset();
-                timer.Start();
-                tragTool.GetStreamFromArray(left_bufferedStream, Power10_Powerpath3Points, Power10_Powerpath3Len, true, false);
-                tragTool.GetStreamFromArray(right_bufferedStream, Power10_Powerpath3Points, Power10_Powerpath3Len, false, false);
-                state++;
-                break;
-            case 5:
-                if(timer.Get()>0.50){state++;}//wait for FIRE
-                break;
-            case 6: 
-                drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-                state++;
-                break;
-            case 7: //wait for traj to finish
-                if(drive.IsMotionProfileFinished()){state++;}
-                break;
-            case 8: //prepare traj and start next traj
-                tragTool.GetStreamFromArray(left_bufferedStream, Power10_Powerpath4Points, Power10_Powerpath4Len, true, true);
-                tragTool.GetStreamFromArray(right_bufferedStream, Power10_Powerpath4Points, Power10_Powerpath4Len, false, true);
-                drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-                state++;
-                break;
-            case 9: //wait for traj to finish
-                if(drive.IsMotionProfileFinished()){state++;}
-                break;
-            case 10: //prepare traj and start next traj
-                tragTool.GetStreamFromArray(left_bufferedStream, Power10_Powerpath5Points, Power10_Powerpath5Len, true, false);
-                tragTool.GetStreamFromArray(right_bufferedStream, Power10_Powerpath5Points, Power10_Powerpath5Len, false, false);
-                drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-                state++;
-                break;
-            case 11: //wait for traj to finish
-                if(drive.IsMotionProfileFinished()){state++;}
-                break;
-            case 12: //prepare traj and start next traj
-                tragTool.GetStreamFromArray(left_bufferedStream, Power10_Powerpath6Points, Power10_Powerpath6Len, true, true);
-                tragTool.GetStreamFromArray(right_bufferedStream, Power10_Powerpath6Points, Power10_Powerpath6Len, false, true);
-                drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-                state++;
-                break;
-            case 13: //wait for traj to finish
-                if(drive.IsMotionProfileFinished()){state++;}
-                break;
-            case 14: //prepare traj and start next traj
-                tragTool.GetStreamFromArray(left_bufferedStream, Power10_Powerpath7Points, Power10_Powerpath7Len, true, false);
-                tragTool.GetStreamFromArray(right_bufferedStream, Power10_Powerpath7Points, Power10_Powerpath7Len, false, false);
-                drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-                state++;
-                break;
-            case 15: //wait for traj to finish
-                if(drive.IsMotionProfileFinished()){state++;}
-                break;
-            default:
-                break;
-            }
-
-        }else
-        {
-            executeTasks();
-            devStick();
-        }
+        executeTasks();
+        devStick();    
     }
 //*/
     

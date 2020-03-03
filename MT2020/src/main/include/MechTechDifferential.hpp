@@ -34,7 +34,13 @@ class MTDifferential
         
         double _maxVel;//max velocity in low gear:
 
-        double _headingOffset;
+        bool _isConfigAuto;
+        TalonFXConfiguration _lm_drive;
+        TalonFXConfiguration _rm_drive;
+        TalonFXConfiguration _lm_auto;
+        TalonFXConfiguration _rm_auto;
+        BufferedTrajectoryPointStream _autoBuffer1;
+        BufferedTrajectoryPointStream _autoBuffer2;
 
 
 
@@ -47,12 +53,14 @@ class MTDifferential
         MTPoseData GetPose();
         void SetPose(MTPoseData pose);
 
-        void SetHeadingOffset(double radians);
+        void SetHeading(double degrees);
+        double GetHeading();
         
         void SetSpeed(double leftSpeed, double rightSpeed);
         void SetSpeed(ControlMode mode ,double leftSpeed, double rightSpeed);
         void ArcadeDrive(ControlMode mode ,double transVel, double rotVel);
 
+        void StartArcMotionProfile(int trajLen, const double position[], const double velocity[], const double heading[], double duration);
         void StartMotionProfile(BufferedTrajectoryPointStream& leftStream, BufferedTrajectoryPointStream& rightStream, ControlMode mode);
         bool IsMotionProfileFinished();
 
@@ -60,6 +68,8 @@ class MTDifferential
         void SendData(std::string name = "Drive");
 
 	    void configMotors(TalonFXConfiguration leftMotor, TalonFXConfiguration rightMotor);
+        void UseDriveConfig();
+        void UseAutoConfig();
 
         void SetGearRatio(double ratio);
         void SetMaxVel(double maxVel);

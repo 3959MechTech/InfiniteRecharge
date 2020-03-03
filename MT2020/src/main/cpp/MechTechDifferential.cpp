@@ -16,7 +16,6 @@ MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, 
 
     _rEncoderValue = 0;
     _lEncoderValue = 0;
-    _headingOffset = 0;
 
     UpdateTickScalers();
 
@@ -54,6 +53,47 @@ MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, 
     _lm.SelectProfileSlot(0,0);
     _rm.SelectProfileSlot(0,0);
 
+    _lm.GetAllConfigs(_lm_drive);
+    _rm.GetAllConfigs(_rm_drive);
+
+    _lm_auto = _lm_drive;
+    _rm_auto = _rm_drive;
+
+    _lm_auto.primaryPID.selectedFeedbackSensor = FeedbackDevice::SensorDifference;
+    /* Auxiliary PID will be RemoteSensor0 which is the Pigeon */
+    _lm_auto.auxiliaryPID.selectedFeedbackSensor = FeedbackDevice::RemoteSensor1;
+    _lm_auto.neutralDeadband = 0.001; /* 0.1% super small for best low-speed control */
+
+    /* Find these gains in Phoenix Tuner first and later put them here */
+    _lm_auto.slot0.kF = _lm_drive.slot0.kF;
+    _lm_auto.slot0.kP = _lm_drive.slot0.kP;
+    _lm_auto.slot0.kI = _lm_drive.slot0.kI;
+    _lm_auto.slot0.kD = _lm_drive.slot0.kD;
+    _lm_auto.slot0.integralZone = 400;
+    _lm_auto.slot0.closedLoopPeakOutput = 1.0;
+
+    _lm_auto.slot1.kF = 0;
+    _lm_auto.slot1.kP = 0.1;
+    _lm_auto.slot1.kI = 0.0;
+    _lm_auto.slot1.kD = 0.0;
+    _lm_auto.slot1.integralZone = 400;
+    _lm_auto.slot1.closedLoopPeakOutput = 0.1;
+
+    /* Remote Sensor 0 is the other talon's quadrature encoder */
+    _lm_auto.remoteFilter0.remoteSensorSource = RemoteSensorSource::RemoteSensorSource_TalonFX_SelectedSensor;
+    _lm_auto.remoteFilter0.remoteSensorDeviceID = _rm.GetDeviceID();
+
+    /* Remote Sensor 1 is the Pigeon over CAN */
+    _lm_auto.remoteFilter1.remoteSensorSource = RemoteSensorSource::RemoteSensorSource_Pigeon_Yaw;
+    _lm_auto.remoteFilter1.remoteSensorDeviceID = _imu.GetDeviceNumber();
+
+    /* Configure sensor sum to be this quad encoder and the other talon's encoder */
+    _lm_auto.diff0Term = FeedbackDevice::IntegratedSensor;
+    _lm_auto.diff1Term = FeedbackDevice::RemoteSensor0;
+
+    /* Configure auxPIDPolarity to match the drive train */
+    _lm_auto.auxPIDPolarity = false;
+
     //Turn down un-needed data on Can Bus
     _ls.SetStatusFramePeriod(motorcontrol::StatusFrame::Status_1_General_, 255);
     _ls.SetStatusFramePeriod(motorcontrol::StatusFrame::Status_2_Feedback0_, 255);
@@ -75,23 +115,37 @@ MTDifferential::~MTDifferential()
 
 void MTDifferential::ResetEncoders()
 {
-    _lm.SetSelectedSensorPosition(0,0,0);
-    _rm.SetSelectedSensorPosition(0,0,0);
+    _lm.GetSensorCollection().SetIntegratedSensorPosition(0);
+    _rm.GetSensorCollection().SetIntegratedSensorPosition(0);
+    //_lm.SetSelectedSensorPosition(0,0,0);
+    //_rm.SetSelectedSensorPosition(0,0,0);
 }
 
 void MTDifferential::SetSpeed(double leftSpeed, double rightSpeed)
 {
+    if(_isConfigAuto)
+    {
+        UseDriveConfig();
+    }
     _lm.Set(ControlMode::PercentOutput, leftSpeed);
     _rm.Set(ControlMode::PercentOutput, rightSpeed);
 }
 
 void MTDifferential::SetSpeed(ControlMode mode ,double leftSpeed, double rightSpeed)
 {
+    if(_isConfigAuto)
+    {
+        UseDriveConfig();
+    }
     _lm.Set(mode, leftSpeed);
     _rm.Set(mode, rightSpeed);
 }
 void MTDifferential::ArcadeDrive(ControlMode mode ,double transVel, double rotVel)
 {
+    if(_isConfigAuto)
+    {
+        UseDriveConfig();
+    }
     rotVel = -rotVel/2.0;
     _lm.Set(mode, (transVel+rotVel));
     _rm.Set(mode, (transVel-rotVel));
@@ -100,13 +154,60 @@ void MTDifferential::ArcadeDrive(ControlMode mode ,double transVel, double rotVe
 
 void MTDifferential::StartMotionProfile(BufferedTrajectoryPointStream& leftStream, BufferedTrajectoryPointStream& rightStream, ControlMode mode )
 {
+    if(_isConfigAuto)
+    {
+        UseDriveConfig();
+    }
+
     _lm.StartMotionProfile(leftStream, 10, mode);
     _rm.StartMotionProfile(rightStream, 10, mode);
+}
+void MTDifferential::StartArcMotionProfile(int trajLen, const double position[], const double velocity[], const double heading[], double duration)
+{
+    if(!_isConfigAuto)
+    {
+        UseAutoConfig();
+    }
+    _autoBuffer1.Clear();
+    TrajectoryPoint point;
+    for (int i = 0; i < trajLen; ++i) {
+
+        double positionRot = position[i];
+        double velocityRPM = velocity[i];
+        int durationMilliseconds = (int) duration;
+
+        /* for each point, fill our structure and pass it to API */
+        point.timeDur = durationMilliseconds;
+        point.position = positionRot * _ticksPerInch; // Convert Revolutions to
+                                                         // Units
+        point.velocity = velocityRPM * _ticksPerInch / 600.0; // Convert RPM to
+                                                                 // Units/100ms
+        
+        /** 
+         * Here is where you specify the heading of the robot at each point. 
+         * In this example we're linearly interpolating creating a segment of a circle to follow
+         */
+        point.auxiliaryPos = heading[i]*10.0; //Linearly interpolate the turn amount to do a circle
+        point.auxiliaryVel = 0;
+
+
+        point.profileSlotSelect0 = 0; /* which set of gains would you like to use [0,3]? */
+        point.profileSlotSelect1 = 1; /* which set of gains would you like to use [0,3]? */
+        point.zeroPos = (i == 0); /* set this to true on the first point */
+        point.isLastPoint = ((i + 1) == trajLen); /* set this to true on the last point */
+        point.arbFeedFwd = 0; /* you can add a constant offset to add to PID[0] output here */
+
+        point.useAuxPID = true; /* Using auxiliary PID */
+        _autoBuffer1.Write(point);
+    }
+
+    _lm.StartMotionProfile(_autoBuffer1, 10, ControlMode::MotionProfileArc);
+
 }
 
 bool MTDifferential::IsMotionProfileFinished()
 {
-    if(_lm.IsMotionProfileFinished() && _rm.IsMotionProfileFinished())
+    if(_lm.IsMotionProfileFinished() )
     {
         return true;
     }
@@ -117,6 +218,27 @@ void MTDifferential::configMotors(TalonFXConfiguration leftMotor, TalonFXConfigu
 {
     _lm.ConfigAllSettings(leftMotor);
     _rm.ConfigAllSettings(rightMotor);
+}
+
+void MTDifferential::UseDriveConfig()
+{
+    if(_isConfigAuto)
+    {
+        _isConfigAuto = false;
+        configMotors(_lm_drive, _rm_drive);
+        
+    }
+}
+
+void MTDifferential::UseAutoConfig()
+{
+    if(!_isConfigAuto)
+    {
+        _isConfigAuto = true;
+        _lm.ConfigAllSettings(_lm_auto);
+        _rm.Follow(_lm, FollowerType::FollowerType_AuxOutput1);
+
+    }
 }
 
 
@@ -146,9 +268,14 @@ void MTDifferential::UpdateTickScalers()
     
     //_ticksPerInch = (ticksPerMotorRev*gearRatio)/(wheelDiameter*3.14159);
 }
-void MTDifferential::SetHeadingOffset(double radians)
+void MTDifferential::SetHeading(double degrees)
 {
-    _headingOffset = radians;
+    _imu.SetFusedHeading(degrees);
+}
+
+double MTDifferential::GetHeading()
+{
+    return _imu.GetFusedHeading();
 }
 
 
@@ -171,7 +298,6 @@ void MTDifferential::UpdatePose()
 
     //get current heading
     newPose.phi = MTMath::CleanAngle( MTMath::DegreesToRadians(_imu.GetFusedHeading()));
-    newPose.phi = MTMath::CleanAngle(newPose.phi-_headingOffset);
 
     //update x and y position as long as we aren't doing a 0 point turn
     double l,r,d, tickScaler;

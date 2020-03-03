@@ -73,6 +73,13 @@ class Robot : public frc::TimedRobot {
 
   void sendData();
 
+  void AutoStraight();
+  void AutoTrench1();
+  void AutoTrench2();
+  void AutoTrenchNinja1();
+  void AutoTrenchNinja2();
+  void AutoTrenchNinja3();
+
  private:
 
   void updatePose();
@@ -82,11 +89,26 @@ class Robot : public frc::TimedRobot {
   void devStick();
 
 
+  enum AutoRoutine {
+    Straight, TrenchRun6, TrenchRun8, TrenchNinja5, TrenchNinjaTrench, TrenchNinjaGenerator8 
+  };
+  AutoRoutine _routine;
+  bool _autoWaitForShooter;
 
-  frc::SendableChooser<std::string> m_chooser;
-  const std::string kAutoNameDefault = "Default";
-  const std::string kAutoNameCustom = "My Auto";
+  frc::SendableChooser<std::string> m_fireModeChooser;
+  const std::string kAutoFireOnRun = "Fire on the run";
+  const std::string kAutoWait = "Wait for spin up";
+
+  frc::SendableChooser<std::string> m_routineChooser;
+  const std::string kAutoNameStraight = "Straight";
+  const std::string kAutoNameTrenchRun1 = "Trench Run 6 ball";
+  const std::string kAutoNameTrenchRun2 = "Trench Run 6 ball + 2 Generator";
+  const std::string kAutoNameTrenchNinja1 = "Trench Ninja 5 ball";
+  const std::string kAutoNameTrenchNinja2 = "Trench Ninja 5 ball + trench";
+  const std::string kAutoNameTrenchNinja3 = "Trench Ninja 5 ball + 3 Generator";
+
   std::string m_autoSelected;
+  std::string m_autoFireModeSelected;
 
   frc::Timer smTimer{};
 

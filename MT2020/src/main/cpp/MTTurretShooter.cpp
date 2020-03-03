@@ -22,7 +22,7 @@ MTTurretShooter::MTTurretShooter(int leftMotor, int rightMotor, int turretMotor,
     _rm.SetInverted(false);
     _lm.SetInverted(InvertType::OpposeMaster);//could be FollowMaster
     
-    _rm.Config_kF(0,.04778,0);
+    _rm.Config_kF(0,.05,0);//old .04778
     _rm.Config_kP(0,.06,0);
     _rm.Config_kI(0,.0,0);
     _rm.Config_kD(0,.0,0);
@@ -67,15 +67,23 @@ MTTurretShooter::~MTTurretShooter()
     
 }
 
-void MTTurretShooter::shoot(double speed)
+
+bool MTTurretShooter::isShooterReady()
 {
-    
-    
+    if(_lm.GetClosedLoopError()<250)
+        return true;
+    else 
+        return false;
 }
 
 void MTTurretShooter::zeroTurret()
 {
     _imu.SetYaw(0);
+}
+
+double MTTurretShooter::GetHeading()
+{
+    return _imu.GetFusedHeading();
 }
 
 void MTTurretShooter::spin(double speed)
@@ -116,7 +124,8 @@ void MTTurretShooter::sendData(std::string name)
     frc::SmartDashboard::PutNumber(name + " Turret Error", _turretMotor.GetClosedLoopError());
     frc::SmartDashboard::PutNumber(name + " Speed", _rm.GetSelectedSensorVelocity());
     frc::SmartDashboard::PutNumber(name + " Speed Error", _rm.GetClosedLoopError());
-    frc::SmartDashboard::PutNumber(name + " Shooter Temp (C)", _rm.GetTemperature());
+    frc::SmartDashboard::PutNumber(name + " Temp (C)", _rm.GetTemperature());
+    frc::SmartDashboard::PutBoolean(name + " Ready", isShooterReady());
 
 
 } // namespace name

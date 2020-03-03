@@ -46,13 +46,15 @@ class MTTurretShooter {
   void setWheelSpeed(double speed);
   void sendData(std::string name = "Shooter");
 
+  bool isShooterReady();
+
   void zeroTurret();
 
   void updateTargetHeading(double degrees);
   void advTrack();
   void track(MTPoseData drivePose, double x_angle, double y_angle);
   
-  void GetHeading();
+  double GetHeading();
 
 
 

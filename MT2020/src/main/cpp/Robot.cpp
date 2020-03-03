@@ -21,6 +21,8 @@
 #include "Power10_Powerpath6.h"
 #include "Power10_Powerpath7.h"
 
+#include "AutoPaths/Straight_f1.h"
+
 
 /*
 INDEXER
@@ -59,9 +61,20 @@ currently no probe ID
 
 void Robot::RobotInit() 
 {
-    m_chooser.SetDefaultOption(kAutoNameDefault, kAutoNameDefault);
-    m_chooser.AddOption(kAutoNameCustom, kAutoNameCustom);
-    frc::SmartDashboard::PutData("Auto Modes", &m_chooser);
+    m_fireModeChooser.SetDefaultOption(kAutoWait, kAutoWait);
+    m_fireModeChooser.AddOption(kAutoFireOnRun, kAutoFireOnRun);
+    frc::SmartDashboard::PutData("Fire Mode", &m_fireModeChooser);
+
+    m_routineChooser.SetDefaultOption(kAutoNameTrenchRun1, kAutoNameTrenchRun1);
+    m_routineChooser.AddOption(kAutoNameStraight, kAutoNameStraight);
+    m_routineChooser.AddOption(kAutoNameTrenchRun2, kAutoNameTrenchRun2);
+    m_routineChooser.AddOption(kAutoNameTrenchNinja1, kAutoNameTrenchNinja1);
+    m_routineChooser.AddOption(kAutoNameTrenchNinja2, kAutoNameTrenchNinja2);
+    m_routineChooser.AddOption(kAutoNameTrenchNinja3, kAutoNameTrenchNinja3);
+    frc::SmartDashboard::PutData("Select Routine", &m_routineChooser);
+
+    _autoWaitForShooter = true;
+    _routine = AutoRoutine::TrenchRun6;
 
     //Initializes a smart timer to begin
     smTimer.Start();
@@ -371,19 +384,53 @@ void Robot::RobotPeriodic() {
 }
 
 void Robot::AutonomousInit() {
-  m_autoSelected = m_chooser.GetSelected();
+    m_autoSelected = m_routineChooser.GetSelected();
+    m_autoFireModeSelected = m_fireModeChooser.GetSelected();
+    std::cout << "Auto selected: " << m_autoSelected << std::endl;
+    _autoWaitForShooter = true;
+    _routine = AutoRoutine::TrenchRun6;
 
-  std::cout << "Auto selected: " << m_autoSelected << std::endl;
-
-  if (m_autoSelected == kAutoNameCustom) {
-  } else {
-  }
+    if (m_autoSelected == kAutoNameStraight)
+        _routine = AutoRoutine::Straight;
+    if (m_autoSelected == kAutoNameTrenchRun2)
+        _routine = AutoRoutine::TrenchRun8;
+    if (m_autoSelected == kAutoNameTrenchNinja1)
+        _routine = AutoRoutine::TrenchNinja5;
+    if (m_autoSelected == kAutoNameTrenchNinja2)
+        _routine = AutoRoutine::TrenchNinjaTrench;
+    if (m_autoSelected == kAutoNameTrenchNinja3)
+        _routine = AutoRoutine::TrenchNinjaGenerator8;
+    
+    state = 0;
+    
 }
 
 void Robot::AutonomousPeriodic() {
-  if (m_autoSelected == kAutoNameCustom) {
-  } else {
-  }
+    switch (_routine)
+    {
+    case AutoRoutine::Straight:
+        AutoStraight();
+        break;
+    case AutoRoutine::TrenchRun6:
+        AutoTrench1();
+        break;
+    case AutoRoutine::TrenchRun8:
+        AutoTrench2();
+        break;
+    case AutoRoutine::TrenchNinja5:
+        AutoTrenchNinja1();
+        break;
+    case AutoRoutine::TrenchNinjaTrench:
+        AutoTrenchNinja2();
+        break;
+    case AutoRoutine::TrenchNinjaGenerator8:
+        AutoTrenchNinja3();
+        break;
+    
+    default:
+        break;
+    }
+
 }
 
 void Robot::TeleopInit() {
@@ -557,6 +604,111 @@ void Robot::TeleopPeriodic() {
 }
 
 void Robot::TestPeriodic() {}
+
+void Robot::AutoStraight()
+{
+    switch (state)
+    {
+    case 0:
+        timer.Start();
+        timer.Reset();//reset timer
+        shooter.setWheelSpeed(14000);
+        drive.ResetEncoders();
+        state++;
+        break;
+    case 1:
+        drive.StartArcMotionProfile(Straight_f1Len, 
+                                    Straight_f1Points[MTPath::column2::position_center_v2],
+                                    Straight_f1Points[MTPath::column2::velocity_center_v2],
+                                    Straight_f1Points[MTPath::column2::heading_v2],
+                                    Straight_f1Points[0][MTPath::column2::duration_v2]
+                                    );
+        state++;
+        break;
+    case 2: 
+        if(drive.IsMotionProfileFinished()){state++;}
+        break;
+    default:
+        break;
+    }
+}
+
+void Robot::AutoTrench1()
+{
+    
+    switch (state)
+    {
+    case 0: //setup
+        timer.Start();
+        timer.Reset();//reset timer
+        shooter.setWheelSpeed(14000);
+        //indexer.DirectDrive(.5,.3,1.0);
+        //zero the encoders and state machine variable
+        drive.ResetEncoders();
+        //load trajectory into buffer
+        tragTool.GetStreamFromArray(left_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, true, true);
+        tragTool.GetStreamFromArray(right_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, false, true);
+        state++;
+    case 1: 
+        if(shooter.isShooterReady()){indexer.DirectDrive(.5,.3,1.0);}
+        if(timer.Get()>4.5){state++;}
+        if(!_autoWaitForShooter){state++;}
+        //state++;
+        break;
+    case 2://start traj
+        drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
+        state++;
+        break;
+    case 3: //wait for traj to finish
+        feeder.Feed(.6);
+        if(drive.IsMotionProfileFinished()){state++;}
+        indexer.DirectDrive(0,0,0);
+        shooter.setWheelSpeed(17000);
+        break;
+    case 4: //prepare to reverse traj
+        tragTool.GetStreamFromArray(left_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, true, false);
+        tragTool.GetStreamFromArray(right_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, false, false);
+        timer.Reset();
+        timer.Start();
+        state++;
+        break;
+    case 5: 
+        if(timer.Get()>.20){state++;}//wait 2 seconds
+        {indexer.DirectDrive(.5,.3,1.0);} 
+        break;
+    case 6: //start rev traj
+        drive.StartMotionProfile(right_bufferedStream, left_bufferedStream, ControlMode::MotionProfile); 
+        timer.Reset();
+        state++;
+        break;
+    case 7: //start rev traj
+        
+        state++;
+        break;
+    default:
+        break;
+    }
+}
+
+void Robot::AutoTrench2()
+{
+    AutoStraight();
+}
+
+void Robot::AutoTrenchNinja1()
+{
+    AutoStraight();
+}
+
+void Robot::AutoTrenchNinja2()
+{
+    AutoStraight();
+}
+
+void Robot::AutoTrenchNinja3()
+{
+    AutoStraight();
+}
 
 #ifndef RUNNING_FRC_TESTS
 int main() { return frc::StartRobot<Robot>(); }

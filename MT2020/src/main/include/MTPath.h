@@ -17,7 +17,23 @@ class MTPath {
   MTPath(double wheelDiameter, double ticksPerMotorRev, double gearRatio=1.0);
   ~MTPath(){};
   
-  enum column{position_left, velocity_left, position_right, velocity_right, duration};
+  enum column{
+      position_left, 
+      velocity_left, 
+      position_right, 
+      velocity_right, 
+      duration
+      };
+  enum column2{
+      position_left_v2, 
+      velocity_left_v2, 
+      position_right_v2, 
+      velocity_right_v2, 
+      position_center_v2, 
+      velocity_center_v2, 
+      heading_v2, 
+      duration_v2
+      };
   
   void GetStreamFromArray(BufferedTrajectoryPointStream& stream, const double traj[][5], int trajLen, bool left, bool forward);
   

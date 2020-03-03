@@ -187,7 +187,7 @@ void MTDifferential::StartArcMotionProfile(int trajLen, const double position[],
          * Here is where you specify the heading of the robot at each point. 
          * In this example we're linearly interpolating creating a segment of a circle to follow
          */
-        point.auxiliaryPos = heading[i]*10.0; //Linearly interpolate the turn amount to do a circle
+        point.auxiliaryPos = heading[i]*(8192.0/360.0); //8192 ticks per 360 degrees, multiply heading by ticks per degree for setpoint.
         point.auxiliaryVel = 0;
 
 

@@ -32,7 +32,7 @@ MTTurretShooter::MTTurretShooter(int leftMotor, int rightMotor, int turretMotor,
     turretMotorConfig.remoteFilter0.remoteSensorSource = RemoteSensorSource::RemoteSensorSource_Pigeon_Yaw;
     turretMotorConfig.remoteFilter0.remoteSensorDeviceID = _imu.GetDeviceNumber();
 
-    turretMotorConfig.primaryPID.selectedFeedbackCoefficient = 3600.0/8192.0;
+    //turretMotorConfig.primaryPID.selectedFeedbackCoefficient = 3600.0/8192.0;
     turretMotorConfig.primaryPID.selectedFeedbackSensor = FeedbackDevice::RemoteSensor0;
     turretMotorConfig.slot0.kP = 1.0;
     turretMotorConfig.slot0.kI = .01;
@@ -134,7 +134,7 @@ void MTTurretShooter::updateTargetHeading(double offset)
 {
     //if(offset>=0.0)
     //{
-        _targetHeading = _turretMotor.GetSelectedSensorPosition() - offset*10.0;
+        _targetHeading = _turretMotor.GetSelectedSensorPosition() - offset*(8192.0/360.0);
     /*}else
     {
         _targetHeading = 1800.0 - offset*10.0 ;

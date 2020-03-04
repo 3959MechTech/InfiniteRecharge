@@ -90,6 +90,7 @@ class Robot : public frc::TimedRobot {
   void devStick();
 
   void toggleFeeder();
+  void indexerS1();
 
 
   enum AutoRoutine {
@@ -158,6 +159,7 @@ class Robot : public frc::TimedRobot {
   Feeder feeder{60};
 
   Indexer indexer{30,31,32};
+  frc::Timer indexerS1Timer{};
 
   MTTurretShooter shooter{20,21,22,2};
 

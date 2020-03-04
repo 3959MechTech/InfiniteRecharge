@@ -110,6 +110,8 @@ void Robot::RobotInit()
     _feederUp = true;
     _feederPiston.Set(_feederUp);
 
+    indexerS1Timer.Start();
+
     //cam.EnableTermination();
     //cam.SetReadBufferSize(16);
     //cam.SetTimeout(1.0);
@@ -236,6 +238,22 @@ void Robot::autoTrack()
     
     //shooter.track(pose, NetTable->GetNumber("tx", 0.0), NetTable->GetNumber("ty", 0.0));
 
+}
+void Robot::indexerS1()
+{
+    if(indexerS1Timer.Get()<=5.0)
+    {
+        indexer.SetM1(.5);
+    }else
+    {
+        if(indexerS1Timer.Get()>5.0 && indexerS1Timer.Get()<6.0)
+        {
+            indexer.SetM1(0.0);
+        }else
+        {
+            indexerS1Timer.Reset();
+        }
+    }
 }
 
 void Robot::devStick()
@@ -520,12 +538,15 @@ void Robot::RobotPeriodic() {
     smTimer.Reset();
     //drive.SendData();
   }
+  /*
   if(stick.GetPOV()==0)
   {
       _shooterThreadMutex.lock();
       _autotrack = false;
       _shooterThreadMutex.unlock();
   }
+  */
+    indexerS1();
 
 }
 

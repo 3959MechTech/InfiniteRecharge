@@ -49,6 +49,7 @@ private:
    double GetSetPoint();
    void SetPPos(PPos);
    double GetEncoderPos();
+   double GetEncoderVel();
 
    void ConfigureLeft(TalonSRXConfiguration left);
    void ConfigureRight(TalonSRXConfiguration right);

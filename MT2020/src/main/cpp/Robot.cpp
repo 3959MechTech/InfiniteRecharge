@@ -126,6 +126,7 @@ void Robot::RobotInit()
 
 void Robot::toggleFeeder()
 {
+    
     _feederUp = !_feederUp;
     _feederPiston.Set(_feederUp);
     if(_feederUp)
@@ -138,6 +139,10 @@ void Robot::toggleFeeder()
         _feederUpTime.Reset();
     }
     
+    if(!_feederUp)
+    {
+        periscope.SetMotorSpeed(0.0);
+    }
 
 }
 
@@ -399,7 +404,35 @@ void Robot::executeTasks()
         }
     }
 
-    if(!_autotrack)
+    bool at;
+    _shooterThreadMutex.lock_shared();
+    at = _autotrack;
+    _shooterThreadMutex.unlock_shared();
+
+    if(stick2.GetPOV()==0)
+    {
+        if(!at)
+        {
+            _shooterThreadMutex.lock();
+            _autotrack = true;
+            _shooterThreadMutex.unlock();
+        }
+    }
+    if(stick2.GetPOV()==180)
+    {
+        if(at)
+        {
+            _shooterThreadMutex.lock();
+            _autotrack = true;
+            _shooterThreadMutex.unlock();
+        }
+    }
+    if(stick2.GetPOV()==90)
+    {
+        shooter.setWheelSpeed(0.0);    
+    }
+
+    if(!at)
     {
         shooter.spin(stick2.GetX(frc::GenericHID::kRightHand));
     }
@@ -421,30 +454,57 @@ void Robot::executeTasks()
         shooter.setWheelSpeed(14500);
     }
 
-    if(stick2.GetBumperPressed(frc::GenericHID::kRightHand))
+    if(stick2.GetBumperPressed(frc::GenericHID::kRightHand)||stick.GetBumperPressed(frc::GenericHID::kRightHand))
     {
-        
+        toggleFeeder();
     }
 
     if(stick2.GetTriggerAxis(frc::GenericHID::kRightHand)>.1)
     {
-        feeder.Feed(stick2.GetTriggerAxis(frc::GenericHID::kRightHand)*.75);
+        if(!_feederUp)
+        {
+            feeder.Feed(stick2.GetTriggerAxis(frc::GenericHID::kRightHand)*.75);
+        }
     }else
     {
-        if(stick2.GetStartButtonPressed())
+        if(stick.GetTriggerAxis(frc::GenericHID::kRightHand)>.1)
         {
-            feeder.Eject(1.0);
+            if(!_feederUp)
+            {
+                feeder.Feed(stick.GetTriggerAxis(frc::GenericHID::kRightHand)*.75);
+            }
         }else
         {
-            feeder.Feed(0.0);    
+            if(stick2.GetStartButtonPressed())
+            {
+                feeder.Eject(1.0);
+            }else
+            {
+                feeder.Feed(-0.2);    
+            }
         }
-
+    }
+    if(_feederUp)
+    {
+        feeder.Feed(0.0);
     }
     
-    if(stick2.GetTriggerAxis(frc::GenericHID::kLeftHand))
+    if(stick2.GetTriggerAxis(frc::GenericHID::kLeftHand)>.1)
     {
-        //Indexer
+        indexer.SetM2(stick2.GetTriggerAxis(frc::GenericHID::kLeftHand)*.8);
+    }else
+    {
+        indexer.SetM2(0.0);
     }
+    
+    if(stick2.GetBumper(frc::GenericHID::kLeftHand))
+    {
+        indexer.SetM3(1.0);
+    }else
+    {
+        indexer.SetM3(0.0);
+    }
+    
 
     
 

@@ -200,6 +200,11 @@ double Periscope::GetEncoderPos()
 	return _left.GetSelectedSensorPosition();
 }
 
+double Periscope::GetEncoderVel()
+{
+	return _left.GetSelectedSensorVelocity();
+}
+
 void Periscope::sendData(std::string name )
 {
 	frc::SmartDashboard::PutNumber(name + " right position", _right.GetSelectedSensorPosition());

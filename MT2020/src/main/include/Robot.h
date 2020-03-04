@@ -10,6 +10,7 @@
 #include <frc/XboxController.h>
 #include <frc/Notifier.h>
 #include <frc/Compressor.h>
+#include <frc/Solenoid.h>
 
 #include <rev/CANSparkMax.h>
 
@@ -88,9 +89,11 @@ class Robot : public frc::TimedRobot {
   void executeTasks();
   void devStick();
 
+  void toggleFeeder();
+
 
   enum AutoRoutine {
-    Straight, TrenchRun6, TrenchRun8, TrenchNinja5, TrenchNinjaTrench, TrenchNinjaGenerator8 
+    Straight, SideTrench, SideTrench8, TrenchRun6, TrenchRun8, TrenchNinja5, TrenchNinjaTrench, TrenchNinjaGenerator8 
   };
   AutoRoutine _routine;
   bool _autoWaitForShooter;
@@ -101,11 +104,13 @@ class Robot : public frc::TimedRobot {
 
   frc::SendableChooser<std::string> m_routineChooser;
   const std::string kAutoNameStraight = "Straight";
-  const std::string kAutoNameTrenchRun1 = "Trench Run 6 ball";
-  const std::string kAutoNameTrenchRun2 = "Trench Run 6 ball + 2 Generator";
-  const std::string kAutoNameTrenchNinja1 = "Trench Ninja 5 ball";
-  const std::string kAutoNameTrenchNinja2 = "Trench Ninja 5 ball + trench";
-  const std::string kAutoNameTrenchNinja3 = "Trench Ninja 5 ball + 3 Generator";
+  const std::string kAutoNameTrenchRun1 = "Trench Run From Side";
+  const std::string kAutoNameTrenchRun2 = "Trench Run From Target";
+  const std::string kAutoNameTrenchRun3 = "Trench Run + 2 Generator from Side";
+  const std::string kAutoNameTrenchRun4 = "Trench Run + 2 Generator from Target";
+  const std::string kAutoNameTrenchNinja1 = "Trench Ninja";
+  const std::string kAutoNameTrenchNinja2 = "Trench Ninja + trench";
+  const std::string kAutoNameTrenchNinja3 = "Trench Ninja + 3 Generator";
 
   std::string m_autoSelected;
   std::string m_autoFireModeSelected;
@@ -116,6 +121,10 @@ class Robot : public frc::TimedRobot {
   frc::XboxController stick2{1};
   frc::XboxController stick3{3};
   frc::XboxController stick4{4};
+
+  frc::Solenoid _feederPiston{0};
+  bool _feederUp;
+  frc::Timer _feederUpTime{};
 
   MTDifferential drive{11,13,10,12,1};
   frc::Timer timer{};

@@ -15,7 +15,24 @@
 #include "TrenchRun_TrenchRun2.h"
 
 
-#include "AutoPaths/Straight_f1.h"
+#include "AutoPaths/Straight_f1.h"    //move forward 53"
+
+#include "AutoPaths/SideTrench_f1.h"  //for right wall starting line
+#include "AutoPaths/SideTrench_f2.h"  //move to TrenchRun_r2 after this 
+#include "AutoPaths/TrenchRun_f1.h"   //setup infront of target
+#include "AutoPaths/TrenchRun_r2.h"
+#include "AutoPaths/TrenchRun_f3.h"
+#include "AutoPaths/TrenchRun_r4.h"
+
+#include "AutoPaths/TrenchNinja_f1.h"   //setup on enemy trench balls
+#include "AutoPaths/TrenchNinja_r2t.h"  //move to TrenchRun_F1 after this path
+#include "AutoPaths/TrenchNinja_r2g.h"  //Generator run
+#include "AutoPaths/TrenchNinja_f3g.h"
+#include "AutoPaths/TrenchNinja_r4g.h"
+#include "AutoPaths/TrenchNinja_f5g.h"
+#include "AutoPaths/TrenchNinja_r6g.h"
+
+
 
 
 /*
@@ -59,9 +76,11 @@ void Robot::RobotInit()
     m_fireModeChooser.AddOption(kAutoFireOnRun, kAutoFireOnRun);
     frc::SmartDashboard::PutData("Fire Mode", &m_fireModeChooser);
 
-    m_routineChooser.SetDefaultOption(kAutoNameTrenchRun1, kAutoNameTrenchRun1);
+    m_routineChooser.SetDefaultOption(kAutoNameTrenchRun3, kAutoNameTrenchRun3);
     m_routineChooser.AddOption(kAutoNameStraight, kAutoNameStraight);
+    m_routineChooser.AddOption(kAutoNameTrenchRun1, kAutoNameTrenchRun1);
     m_routineChooser.AddOption(kAutoNameTrenchRun2, kAutoNameTrenchRun2);
+    m_routineChooser.AddOption(kAutoNameTrenchRun4, kAutoNameTrenchRun4);
     m_routineChooser.AddOption(kAutoNameTrenchNinja1, kAutoNameTrenchNinja1);
     m_routineChooser.AddOption(kAutoNameTrenchNinja2, kAutoNameTrenchNinja2);
     m_routineChooser.AddOption(kAutoNameTrenchNinja3, kAutoNameTrenchNinja3);
@@ -88,6 +107,9 @@ void Robot::RobotInit()
     shooterSpeedSelect = 0.0;
     _autotrack = true;
 
+    _feederUp = true;
+    _feederPiston.Set(_feederUp);
+
     //cam.EnableTermination();
     //cam.SetReadBufferSize(16);
     //cam.SetTimeout(1.0);
@@ -99,6 +121,23 @@ void Robot::RobotInit()
     //cam2.SetTimeout(1.0);
 
     NetTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight");
+
+}
+
+void Robot::toggleFeeder()
+{
+    _feederUp = !_feederUp;
+    _feederPiston.Set(_feederUp);
+    if(_feederUp)
+    {
+        _feederUpTime.Start();
+        _feederUpTime.Reset();
+    }else
+    {
+        _feederUpTime.Stop();
+        _feederUpTime.Reset();
+    }
+    
 
 }
 
@@ -260,16 +299,17 @@ void Robot::devStick()
     
     if(stick3.GetTriggerAxis(frc::GenericHID::kLeftHand)>.1)
     {
-        feeder.Feed(stick3.GetTriggerAxis(frc::GenericHID::kLeftHand)*.75);
+        //feeder.Feed(stick3.GetTriggerAxis(frc::GenericHID::kLeftHand)*.75);
     }else
     {
-        feeder.Feed(0);
+        //feeder.Feed(0);
     }
 
     if(!_autotrack)
     {
         shooter.spin(stick3.GetX(frc::GenericHID::kRightHand));
     }
+
     /*
     if(periscope.Home())
     {
@@ -319,46 +359,59 @@ void Robot::executeTasks()
 
     drive.ArcadeDrive(ControlMode::PercentOutput, lY, rX);
 
-    if(stick.GetStartButtonPressed())
+
+    if(!_autotrack)
     {
-        //Shift Gears
+        shooter.spin(stick2.GetX(frc::GenericHID::kRightHand));
     }
 
     if(stick2.GetAButtonPressed())
     {
-        //Overhead Pneumatic release
+        shooter.setWheelSpeed(13500);
     }
-
+    if(stick2.GetBButtonPressed())
+    {
+        shooter.setWheelSpeed(16000);
+    }
+    if(stick2.GetYButtonPressed())
+    {
+        shooter.setWheelSpeed(20000);
+    }
     if(stick2.GetXButtonPressed())
     {
-        //Set Value for shooter
+        shooter.setWheelSpeed(14500);
+    }
+
+    if(stick2.GetBumperPressed(frc::GenericHID::kRightHand))
+    {
+        
     }
 
     if(stick2.GetTriggerAxis(frc::GenericHID::kRightHand)>.1)
     {
         feeder.Feed(stick2.GetTriggerAxis(frc::GenericHID::kRightHand)*.75);
-    }else{
-        //feeder.Feed(0.0);
-    }
+    }else
+    {
+        if(stick2.GetStartButtonPressed())
+        {
+            feeder.Eject(1.0);
+        }else
+        {
+            feeder.Feed(0.0);    
+        }
 
+    }
+    
     if(stick2.GetTriggerAxis(frc::GenericHID::kLeftHand))
     {
         //Indexer
     }
 
-    if(stick2.GetBumperPressed(frc::GenericHID::kRightHand))
-    {
-        //Control Panel turn 5 times
-    }
-
-    if(stick2.GetBumperPressed(frc::GenericHID::kLeftHand))
-    {
-        //Control Panel moves to specific color 
-    }
+    
 
     if(stick2.GetBackButtonPressed())
     {
-        //Control Panel Override
+        indexer.DirectDrive(-.5,-1.0,-1.0);
     }
 }
 
@@ -368,7 +421,7 @@ void Robot::RobotPeriodic() {
     smTimer.Reset();
     //drive.SendData();
   }
-  if(stick.GetBackButtonPressed())
+  if(stick.GetPOV()==0)
   {
       _shooterThreadMutex.lock();
       _autotrack = false;
@@ -382,21 +435,31 @@ void Robot::AutonomousInit() {
     m_autoFireModeSelected = m_fireModeChooser.GetSelected();
     std::cout << "Auto selected: " << m_autoSelected << std::endl;
     _autoWaitForShooter = true;
-    _routine = AutoRoutine::TrenchRun6;
+    _routine = AutoRoutine::TrenchRun8;
 
     if (m_autoSelected == kAutoNameStraight)
         _routine = AutoRoutine::Straight;
-    if (m_autoSelected == kAutoNameTrenchRun2)
+    if (m_autoSelected == kAutoNameTrenchRun1)//side trench6
+        _routine = AutoRoutine::SideTrench;
+    if (m_autoSelected == kAutoNameTrenchRun2)//target trench6
+        _routine = AutoRoutine::TrenchRun6;
+    if (m_autoSelected == kAutoNameTrenchRun3)//side trench8
+        _routine = AutoRoutine::SideTrench8;
+    if (m_autoSelected == kAutoNameTrenchRun4)//target trench8
         _routine = AutoRoutine::TrenchRun8;
-    if (m_autoSelected == kAutoNameTrenchNinja1)
+    if (m_autoSelected == kAutoNameTrenchNinja1)//ninja 5
         _routine = AutoRoutine::TrenchNinja5;
-    if (m_autoSelected == kAutoNameTrenchNinja2)
+    if (m_autoSelected == kAutoNameTrenchNinja2)//ninja + trench
         _routine = AutoRoutine::TrenchNinjaTrench;
-    if (m_autoSelected == kAutoNameTrenchNinja3)
+    if (m_autoSelected == kAutoNameTrenchNinja3)//ninja + gen
         _routine = AutoRoutine::TrenchNinjaGenerator8;
     
     state = 0;
-    
+
+    _feederUp = false;
+    _feederPiston.Set(_feederUp);
+    _feederUpTime.Stop();
+    _feederUpTime.Reset();
 }
 
 void Robot::AutonomousPeriodic() {
@@ -405,11 +468,17 @@ void Robot::AutonomousPeriodic() {
     case AutoRoutine::Straight:
         AutoStraight();
         break;
+    case AutoRoutine::SideTrench:
+        AutoTrench2();
+        break;
+    case AutoRoutine::SideTrench8:
+        AutoTrench2();
+        break;    
     case AutoRoutine::TrenchRun6:
         AutoTrench1();
         break;
     case AutoRoutine::TrenchRun8:
-        AutoTrench2();
+        AutoTrench1();
         break;
     case AutoRoutine::TrenchNinja5:
         AutoTrenchNinja1();
@@ -596,7 +665,68 @@ void Robot::AutoTrench1()
 
 void Robot::AutoTrench2()
 {
-    AutoStraight();
+    switch (state)
+    {
+    case 0:
+        timer.Start();
+        timer.Reset();//reset timer
+        shooter.setWheelSpeed(16000);
+        drive.ResetEncoders();
+        state++;
+        break;
+    case 1:
+        drive.StartArcMotionProfile(SideTrench_f1Len, 
+                                    SideTrench_f1Points[MTPath::column2::position_center_v2],
+                                    SideTrench_f1Points[MTPath::column2::velocity_center_v2],
+                                    SideTrench_f1Points[MTPath::column2::heading_v2],
+                                    SideTrench_f1Points[0][MTPath::column2::duration_v2]
+                                    );
+        state++;
+        break;
+    case 2: 
+        if(drive.IsMotionProfileFinished())
+        {
+            state++; 
+            timer.Reset();
+            indexer.DirectDrive(.5, .4, 1.0);
+        }
+        break;
+    case 3: //shoot
+        if(timer.Get()>2.5){state++;}
+        break;
+    case 4: 
+        drive.StartArcMotionProfile(SideTrench_f2Len, 
+                                    SideTrench_f2Points[MTPath::column2::position_center_v2],
+                                    SideTrench_f2Points[MTPath::column2::velocity_center_v2],
+                                    SideTrench_f2Points[MTPath::column2::heading_v2],
+                                    SideTrench_f2Points[0][MTPath::column2::duration_v2]
+                                    );
+        state++;
+        break;
+    case 5: 
+        if(drive.IsMotionProfileFinished())
+        {
+            state++; 
+        }
+        break;
+    case 6: 
+        if(_routine == AutoRoutine::SideTrench8)
+        {
+            _routine = AutoRoutine::TrenchRun8;
+            state = 4;
+        }
+        if(_routine == AutoRoutine::SideTrench)
+        {
+            _routine = AutoRoutine::TrenchRun6;
+            state = 4;
+        }
+        AutoTrench1();
+        break;
+    case 7: 
+        break;
+    default:
+        break;
+    }
 }
 
 void Robot::AutoTrenchNinja1()
@@ -606,7 +736,59 @@ void Robot::AutoTrenchNinja1()
 
 void Robot::AutoTrenchNinja2()
 {
-    AutoStraight();
+    //currently this is the old trench run from target code
+    switch (state)
+    {
+    case 0: //setup
+        timer.Start();
+        timer.Reset();//reset timer
+        shooter.setWheelSpeed(14000);
+        //indexer.DirectDrive(.5,.3,1.0);
+        //zero the encoders and state machine variable
+        drive.ResetEncoders();
+        //load trajectory into buffer
+        tragTool.GetStreamFromArray(left_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, true, true);
+        tragTool.GetStreamFromArray(right_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, false, true);
+        state++;
+    case 1: 
+        if(shooter.isShooterReady()){indexer.DirectDrive(.5,.3,1.0);}
+        if(timer.Get()>4.5){state++;}
+        if(!_autoWaitForShooter){state++;}
+        //state++;
+        break;
+    case 2://start traj
+        drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
+        state++;
+        break;
+    case 3: //wait for traj to finish
+        feeder.Feed(.6);
+        if(drive.IsMotionProfileFinished()){state++;}
+        indexer.DirectDrive(0,0,0);
+        shooter.setWheelSpeed(17000);
+        break;
+    case 4: //prepare to reverse traj
+        tragTool.GetStreamFromArray(left_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, true, false);
+        tragTool.GetStreamFromArray(right_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, false, false);
+        timer.Reset();
+        timer.Start();
+        state++;
+        break;
+    case 5: 
+        if(timer.Get()>.20){state++;}//wait 2 seconds
+        {indexer.DirectDrive(.5,.3,1.0);} 
+        break;
+    case 6: //start rev traj
+        drive.StartMotionProfile(right_bufferedStream, left_bufferedStream, ControlMode::MotionProfile); 
+        timer.Reset();
+        state++;
+        break;
+    case 7: //start rev traj
+        
+        state++;
+        break;
+    default:
+        break;
+    }
 }
 
 void Robot::AutoTrenchNinja3()

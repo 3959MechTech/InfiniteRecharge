@@ -125,6 +125,7 @@ class Robot : public frc::TimedRobot {
   frc::Solenoid _feederPiston{0};
   bool _feederUp;
   frc::Timer _feederUpTime{};
+  const double MinFeederUpTime = 2.5;
 
   MTDifferential drive{11,13,10,12,1};
   frc::Timer timer{};

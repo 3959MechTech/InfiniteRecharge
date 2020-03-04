@@ -244,7 +244,6 @@ void Robot::devStick()
     {
         shooter.setWheelSpeed(18000.0);
         shooterSpeedSelect = 18000.0;
-        //periscope.SetPPos(Periscope::Down);
         //shooter.zeroTurret();
     }
 
@@ -252,14 +251,12 @@ void Robot::devStick()
     {
         shooter.setWheelSpeed(15000.0);
         shooterSpeedSelect = 15000.0;
-        //periscope.SetPPos(Periscope::Low);
     }
 
     if(stick3.GetYButton())
     {
         shooter.setWheelSpeed(13500.0);
         shooterSpeedSelect = 13500.0;
-        //periscope.SetPPos(Periscope::High);
     }
 
     if(stick3.GetStartButtonPressed())
@@ -359,6 +356,48 @@ void Robot::executeTasks()
 
     drive.ArcadeDrive(ControlMode::PercentOutput, lY, rX);
 
+    if(stick.GetAButtonPressed())
+    {
+        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        {
+            periscope.SetPPos(Periscope::Down);
+        }
+    }
+    if(stick.GetBButtonPressed())
+    {
+        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        {
+            periscope.SetPPos(Periscope::Low);
+        }
+    }
+    if(stick.GetXButtonPressed())
+    {
+        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        {
+            periscope.SetPPos(Periscope::Level);
+        }
+    }
+    if(stick.GetYButtonPressed())
+    {
+        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        {
+            periscope.SetPPos(Periscope::High);
+        }
+    }
+    if(stick.GetPOV()==0)
+    {
+        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        {
+            periscope.SetPosition(periscope.GetEncoderPos()+100.0);
+        }
+    }
+    if(stick.GetPOV()==180)
+    {
+        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        {
+            periscope.SetPosition(periscope.GetEncoderPos()-100.0);
+        }
+    }
 
     if(!_autotrack)
     {

@@ -189,6 +189,16 @@ void Periscope::SetPPos(PPos pos)
 	
 }
 
+void Periscope::SetPosition(double pos)
+{
+	_left.Set(ControlMode::MotionMagic, pos);
+	_right.Set(ControlMode::MotionMagic, pos);
+}
+
+double Periscope::GetEncoderPos()
+{
+	return _left.GetSelectedSensorPosition();
+}
 
 void Periscope::sendData(std::string name )
 {

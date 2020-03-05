@@ -107,7 +107,7 @@ void Robot::RobotInit()
     shooterSpeedSelect = 0.0;
     _autotrack = true;
 
-    _feederDown = true;
+    _feederDown = false;
     _feederPiston.Set(_feederDown);
 
     indexerS1Timer.Start();
@@ -149,7 +149,6 @@ void Robot::setFeeder(bool down )
     {
         periscope.SetMotorSpeed(0.0);
     }
-
 }
 
 void Robot::updatePose()
@@ -230,6 +229,7 @@ void Robot::sendData()
     }
     
 }
+
 void Robot::autoTrack()
 {
     MTPoseData pose = drive.GetPose();
@@ -397,35 +397,35 @@ void Robot::executeTasks()
     }
     if(stick.GetBButtonPressed())
     {
-        if(_feederDown )//&& _feederDownTime.Get()>MinFeederDownTime)
+        if(_feederDown)//&& _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPPos(Periscope::Low);
         }
     }
     if(stick.GetXButtonPressed())
     {
-        //if(_feederDown && _feederDownTime.Get()>MinFeederDownTime)
+        if(_feederDown)// && _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPPos(Periscope::Level);
         }
     }
     if(stick.GetYButtonPressed())
     {
-        //if(_feederDown && _feederDownTime.Get()>MinFeederDownTime)
+        if(_feederDown)// && _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPPos(Periscope::High);
         }
     }
     if(stick.GetPOV()==0)
     {
-        //if(_feederDown && _feederDownTime.Get()>MinFeederDownTime)
+        if(_feederDown)// && _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPosition(periscope.GetEncoderPos()+100.0);
         }
     }
     if(stick.GetPOV()==180)
     {
-        //if(_feederDown && _feederDownTime.Get()>MinFeederDownTime)
+        if(_feederDown )//&& _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPosition(periscope.GetEncoderPos()-100.0);
         }
@@ -585,10 +585,7 @@ void Robot::AutonomousInit() {
     
     state = 0;
 
-    _feederDown = true;
-    _feederPiston.Set(_feederDown);
-    _feederDownTime.Start();
-    _feederDownTime.Reset();
+    setFeeder();
 }
 
 void Robot::AutonomousPeriodic() {

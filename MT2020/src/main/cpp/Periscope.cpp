@@ -210,6 +210,9 @@ void Periscope::sendData(std::string name )
 	frc::SmartDashboard::PutNumber(name + " right position", _right.GetSelectedSensorPosition());
 	frc::SmartDashboard::PutNumber(name + " left position", _left.GetSelectedSensorPosition());
 
+	frc::SmartDashboard::PutNumber(name + " left position", _left.GetClosedLoopTarget());
+	frc::SmartDashboard::PutNumber(name + " right position", _right.GetClosedLoopTarget());
+
 	frc::SmartDashboard::PutNumber(name + " left clear", _left.ConfigGetCustomParam(ParamEnum::eClearPositionOnLimitR));
 	frc::SmartDashboard::PutNumber(name + " right clear", _right.ConfigGetCustomParam(ParamEnum::eClearPositionOnLimitR));
 

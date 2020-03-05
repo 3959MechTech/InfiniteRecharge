@@ -59,40 +59,34 @@ MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, 
     _lm_auto = _lm_drive;
     _rm_auto = _rm_drive;
 
-    _lm_auto.primaryPID.selectedFeedbackSensor = FeedbackDevice::SensorDifference;
+    _rm_auto.primaryPID.selectedFeedbackSensor = FeedbackDevice::SensorDifference;
     /* Auxiliary PID will be RemoteSensor0 which is the Pigeon */
-    _lm_auto.auxiliaryPID.selectedFeedbackSensor = FeedbackDevice::RemoteSensor1;
-    _lm_auto.neutralDeadband = 0.001; /* 0.1% super small for best low-speed control */
+    _rm_auto.auxiliaryPID.selectedFeedbackSensor = FeedbackDevice::RemoteSensor1;
+    _rm_auto.neutralDeadband = 0.001; /* 0.1% super small for best low-speed control */
 
     /* Find these gains in Phoenix Tuner first and later put them here */
-    _lm_auto.slot0.kF = _lm_drive.slot0.kF;
-    _lm_auto.slot0.kP = _lm_drive.slot0.kP;
-    _lm_auto.slot0.kI = _lm_drive.slot0.kI;
-    _lm_auto.slot0.kD = _lm_drive.slot0.kD;
-    _lm_auto.slot0.integralZone = 400;
-    _lm_auto.slot0.closedLoopPeakOutput = 1.0;
-
-    _lm_auto.slot1.kF = 0;
-    _lm_auto.slot1.kP = 0.1;
-    _lm_auto.slot1.kI = 0.0;
-    _lm_auto.slot1.kD = 0.0;
-    _lm_auto.slot1.integralZone = 400;
-    _lm_auto.slot1.closedLoopPeakOutput = 0.1;
+    
+    _rm_auto.slot1.kF = 0;
+    _rm_auto.slot1.kP = 0.1;
+    _rm_auto.slot1.kI = 0.0;
+    _rm_auto.slot1.kD = 0.0;
+    _rm_auto.slot1.integralZone = 400;
+    _rm_auto.slot1.closedLoopPeakOutput = 0.1;
 
     /* Remote Sensor 0 is the other talon's quadrature encoder */
-    _lm_auto.remoteFilter0.remoteSensorSource = RemoteSensorSource::RemoteSensorSource_TalonFX_SelectedSensor;
-    _lm_auto.remoteFilter0.remoteSensorDeviceID = _rm.GetDeviceID();
+    _rm_auto.remoteFilter0.remoteSensorSource = RemoteSensorSource::RemoteSensorSource_TalonFX_SelectedSensor;
+    _rm_auto.remoteFilter0.remoteSensorDeviceID = _lm.GetDeviceID();
 
     /* Remote Sensor 1 is the Pigeon over CAN */
-    _lm_auto.remoteFilter1.remoteSensorSource = RemoteSensorSource::RemoteSensorSource_Pigeon_Yaw;
-    _lm_auto.remoteFilter1.remoteSensorDeviceID = _imu.GetDeviceNumber();
+    _rm_auto.remoteFilter1.remoteSensorSource = RemoteSensorSource::RemoteSensorSource_Pigeon_Yaw;
+    _rm_auto.remoteFilter1.remoteSensorDeviceID = _imu.GetDeviceNumber();
 
     /* Configure sensor sum to be this quad encoder and the other talon's encoder */
-    _lm_auto.diff0Term = FeedbackDevice::IntegratedSensor;
-    _lm_auto.diff1Term = FeedbackDevice::RemoteSensor0;
+    _rm_auto.diff0Term = FeedbackDevice::IntegratedSensor;
+    _rm_auto.diff1Term = FeedbackDevice::RemoteSensor0;
 
     /* Configure auxPIDPolarity to match the drive train */
-    _lm_auto.auxPIDPolarity = false;
+    _rm_auto.auxPIDPolarity = false;
 
     //Turn down un-needed data on Can Bus
     _ls.SetStatusFramePeriod(motorcontrol::StatusFrame::Status_1_General_, 255);
@@ -168,7 +162,11 @@ void MTDifferential::StartArcMotionProfile(int trajLen, const double position[],
     {
         UseAutoConfig();
     }
+
+    ResetEncoders();
+
     _autoBuffer1.Clear();
+    
     TrajectoryPoint point;
     for (int i = 0; i < trajLen; ++i) {
 
@@ -201,7 +199,7 @@ void MTDifferential::StartArcMotionProfile(int trajLen, const double position[],
         _autoBuffer1.Write(point);
     }
 
-    _lm.StartMotionProfile(_autoBuffer1, 10, ControlMode::MotionProfileArc);
+    _rm.StartMotionProfile(_autoBuffer1, 10, ControlMode::MotionProfileArc);
 
 }
 
@@ -235,8 +233,8 @@ void MTDifferential::UseAutoConfig()
     if(!_isConfigAuto)
     {
         _isConfigAuto = true;
-        _lm.ConfigAllSettings(_lm_auto);
-        _rm.Follow(_lm, FollowerType::FollowerType_AuxOutput1);
+        _rm.ConfigAllSettings(_rm_auto);
+        _lm.Follow(_rm, FollowerType::FollowerType_AuxOutput1);
 
     }
 }
@@ -304,6 +302,7 @@ void MTDifferential::UpdatePose()
     
     tickScaler = _inchPerTick;
     
+    _imu.SetFusedHeading(0.0);
 
     l = _lm.GetSelectedSensorPosition()*tickScaler;
     r = _rm.GetSelectedSensorPosition()*tickScaler;

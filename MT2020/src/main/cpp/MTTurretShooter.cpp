@@ -70,7 +70,7 @@ MTTurretShooter::~MTTurretShooter()
 
 bool MTTurretShooter::isShooterReady()
 {
-    if(_lm.GetClosedLoopError()<250)
+    if(abs(_rm.GetClosedLoopError())<250 )
         return true;
     else 
         return false;
@@ -93,8 +93,13 @@ void MTTurretShooter::spin(double speed)
 void MTTurretShooter::setWheelSpeed(double speed)
 {
     _targetWheelSpeed = speed;
-    _rm.Set(ControlMode::Velocity, _targetWheelSpeed);
-    
+    if(speed < 1.0 && speed > -1.0)
+    {
+        _rm.Set(ControlMode::PercentOutput, 0.0);
+    }else
+    {
+        _rm.Set(ControlMode::Velocity, _targetWheelSpeed);    
+    }
 }
 
 void MTTurretShooter::sendData(std::string name)

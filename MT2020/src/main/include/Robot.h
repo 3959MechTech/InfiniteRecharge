@@ -90,6 +90,7 @@ class Robot : public frc::TimedRobot {
   void devStick();
 
   void toggleFeeder();
+  void setFeeder(bool down = true);
   void indexerS1();
 
 
@@ -123,10 +124,11 @@ class Robot : public frc::TimedRobot {
   frc::XboxController stick3{3};
   frc::XboxController stick4{4};
 
+  frc::Compressor c{0};
   frc::Solenoid _feederPiston{0};
-  bool _feederUp;
-  frc::Timer _feederUpTime{};
-  const double MinFeederUpTime = 2.5;
+  bool _feederDown;
+  frc::Timer _feederDownTime{};
+  const double MinFeederDownTime = .5;
 
   MTDifferential drive{11,13,10,12,1};
   frc::Timer timer{};

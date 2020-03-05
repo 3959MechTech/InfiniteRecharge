@@ -107,8 +107,8 @@ void Robot::RobotInit()
     shooterSpeedSelect = 0.0;
     _autotrack = true;
 
-    _feederUp = true;
-    _feederPiston.Set(_feederUp);
+    _feederDown = true;
+    _feederPiston.Set(_feederDown);
 
     indexerS1Timer.Start();
 
@@ -128,20 +128,24 @@ void Robot::RobotInit()
 
 void Robot::toggleFeeder()
 {
-    
-    _feederUp = !_feederUp;
-    _feederPiston.Set(_feederUp);
-    if(_feederUp)
+    setFeeder(!_feederDown);
+}
+
+void Robot::setFeeder(bool down )
+{
+    _feederDown = down;
+    _feederPiston.Set(_feederDown);
+    if(_feederDown)
     {
-        _feederUpTime.Start();
-        _feederUpTime.Reset();
+        _feederDownTime.Start();
+        _feederDownTime.Reset();
     }else
     {
-        _feederUpTime.Stop();
-        _feederUpTime.Reset();
+        _feederDownTime.Stop();
+        _feederDownTime.Reset();
     }
     
-    if(!_feederUp)
+    if(!_feederDown)
     {
         periscope.SetMotorSpeed(0.0);
     }
@@ -214,6 +218,10 @@ void Robot::sendData()
         periscope.sendData();
         feeder.SendData();
         drive.SendData();
+
+        frc::SmartDashboard::PutBoolean("FeederDown", _feederDown);
+        frc::SmartDashboard::PutNumber("FeederDownTime", _feederDownTime.Get());
+
         frc::SmartDashboard::PutNumber("auto state", state);
         frc::SmartDashboard::PutNumber("auto Timer", timer.Get());
         frc::SmartDashboard::PutNumber("Telemetery Thread Period", _telemetryTimer.Get());
@@ -239,14 +247,15 @@ void Robot::autoTrack()
     //shooter.track(pose, NetTable->GetNumber("tx", 0.0), NetTable->GetNumber("ty", 0.0));
 
 }
+
 void Robot::indexerS1()
 {
-    if(indexerS1Timer.Get()<=5.0)
+    if(indexerS1Timer.Get()<=1.0)
     {
         indexer.SetM1(.5);
     }else
     {
-        if(indexerS1Timer.Get()>5.0 && indexerS1Timer.Get()<6.0)
+        if(indexerS1Timer.Get()>1.0 && indexerS1Timer.Get()<1.25)
         {
             indexer.SetM1(0.0);
         }else
@@ -381,42 +390,42 @@ void Robot::executeTasks()
 
     if(stick.GetAButtonPressed())
     {
-        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        if(_feederDown)// && _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPPos(Periscope::Down);
         }
     }
     if(stick.GetBButtonPressed())
     {
-        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        if(_feederDown )//&& _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPPos(Periscope::Low);
         }
     }
     if(stick.GetXButtonPressed())
     {
-        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        //if(_feederDown && _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPPos(Periscope::Level);
         }
     }
     if(stick.GetYButtonPressed())
     {
-        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        //if(_feederDown && _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPPos(Periscope::High);
         }
     }
     if(stick.GetPOV()==0)
     {
-        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        //if(_feederDown && _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPosition(periscope.GetEncoderPos()+100.0);
         }
     }
     if(stick.GetPOV()==180)
     {
-        if(_feederUp && _feederUpTime.Get()>MinFeederUpTime)
+        //if(_feederDown && _feederDownTime.Get()>MinFeederDownTime)
         {
             periscope.SetPosition(periscope.GetEncoderPos()-100.0);
         }
@@ -479,7 +488,7 @@ void Robot::executeTasks()
 
     if(stick2.GetTriggerAxis(frc::GenericHID::kRightHand)>.1)
     {
-        if(!_feederUp)
+        if(_feederDown)
         {
             feeder.Feed(stick2.GetTriggerAxis(frc::GenericHID::kRightHand)*.75);
         }
@@ -487,7 +496,7 @@ void Robot::executeTasks()
     {
         if(stick.GetTriggerAxis(frc::GenericHID::kRightHand)>.1)
         {
-            if(!_feederUp)
+            if(_feederDown)
             {
                 feeder.Feed(stick.GetTriggerAxis(frc::GenericHID::kRightHand)*.75);
             }
@@ -498,11 +507,11 @@ void Robot::executeTasks()
                 feeder.Eject(1.0);
             }else
             {
-                feeder.Feed(-0.2);    
+                feeder.Feed(-0.1);    
             }
         }
     }
-    if(_feederUp)
+    if(!_feederDown)
     {
         feeder.Feed(0.0);
     }
@@ -576,10 +585,10 @@ void Robot::AutonomousInit() {
     
     state = 0;
 
-    _feederUp = false;
-    _feederPiston.Set(_feederUp);
-    _feederUpTime.Stop();
-    _feederUpTime.Reset();
+    _feederDown = true;
+    _feederPiston.Set(_feederDown);
+    _feederDownTime.Start();
+    _feederDownTime.Reset();
 }
 
 void Robot::AutonomousPeriodic() {
@@ -624,7 +633,7 @@ void Robot::TeleopInit() {
 void Robot::TeleopPeriodic() {
   
     //devStick();
-    //executeTasks();
+    executeTasks();
     
     //frc::SmartDashboard::PutNumber("rv", rv);
 
@@ -633,66 +642,7 @@ void Robot::TeleopPeriodic() {
     //X button = left turn
     //Y button = straight
 
-    if(stick4.GetAButton())
-    {
-        if(stick4.GetAButtonPressed())
-        {
-            timer.Start();
-            timer.Reset();//reset timer
-            shooter.setWheelSpeed(16000);
-            //indexer.DirectDrive(.5,.3,1.0);
-            //zero the encoders and state machine variable
-            state = 0;
-            drive.ResetEncoders();
-
-            //load trajectory into buffer
-            tragTool.GetStreamFromArray(left_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, true, true);
-            tragTool.GetStreamFromArray(right_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, false, true);
-        }
-        switch (state)
-        {
-        case 0: //start traj
-            drive.StartMotionProfile(left_bufferedStream, right_bufferedStream, ControlMode::MotionProfile); 
-            if(timer.Get()>2.5){indexer.DirectDrive(.5,.3,1.0);}
-            if(timer.Get()>4.5){state++;}
-            //state++;
-            break;
-        case 1: //wait for traj to finish
-            feeder.Feed(.6);
-            if(drive.IsMotionProfileFinished()){state++;}
-            indexer.DirectDrive(0,0,0);
-            shooter.setWheelSpeed(17000);
-            break;
-        case 2: //prepare to reverse traj
-            tragTool.GetStreamFromArray(left_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, true, false);
-            tragTool.GetStreamFromArray(right_bufferedStream, TrenchRun_TrenchRun1Points, TrenchRun_TrenchRun1Len, false, false);
-            timer.Reset();
-            timer.Start();
-            state++;
-            break;
-        case 3: 
-            if(timer.Get()>.20){state++;}//wait 2 seconds
-            {indexer.DirectDrive(.5,.3,1.0);} 
-            break;
-        case 4: //start rev traj
-            drive.StartMotionProfile(right_bufferedStream, left_bufferedStream, ControlMode::MotionProfile); 
-            timer.Reset();
-            state++;
-            break;
-        case 5: //start rev traj
-            
-            state++;
-            break;
-        default:
-            break;
-        }
-        
-    }else
-    {
-        executeTasks();
-        devStick();    
-    }
-//*/
+    
     
 }
 

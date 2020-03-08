@@ -6,19 +6,19 @@ using namespace frc;
 Periscope::Periscope(int leftM, int rightM): _left(leftM), _right(rightM)
 {
 //Set these when we have a motor to run them
-    posVals[Down][0] = 100;//Position Value
+    posVals[Down][0] = 10.0*4096/.8;//Position Value
 	posVals[Down][1] = 0;//Ramp
 	posVals[Down][2] = 0;//Max Speed
 
-	posVals[Low][0] = 12.0*4096/.8;
+	posVals[Low][0] = 26.0*4096/.8;
 	posVals[Low][1] = 0;
 	posVals[Low][2] = 0;
 
-	posVals[Level][0] = 18.0*4096/.8;
+	posVals[Level][0] = 28.0*4096/.8;
 	posVals[Level][1] = 0;
 	posVals[Level][2] = 0;
 
-    posVals[High][0] = 24.0*4096/.8;
+    posVals[High][0] = 33.0*4096/.8;
 	posVals[High][1] = 0;
 	posVals[High][2] = 0;
 
@@ -220,4 +220,5 @@ void Periscope::sendData(std::string name )
 	frc::SmartDashboard::PutBoolean(name + " limit R LS", _left.GetSensorCollection().IsRevLimitSwitchClosed());
 	frc::SmartDashboard::PutBoolean(name + " limit F RS", _right.GetSensorCollection().IsFwdLimitSwitchClosed());
 	frc::SmartDashboard::PutBoolean(name + " limit R RS", _right.GetSensorCollection().IsRevLimitSwitchClosed());
+	
 }

@@ -11,6 +11,7 @@
 #include <frc/Notifier.h>
 #include <frc/Compressor.h>
 #include <frc/Solenoid.h>
+#include <frc/DriverStation.h>
 
 #include <rev/CANSparkMax.h>
 
@@ -71,12 +72,14 @@ class Robot : public frc::TimedRobot {
   void TeleopInit() override;
   void TeleopPeriodic() override;
   void TestPeriodic() override;
+  void DisabledInit() override;
 
   void sendData();
 
   void AutoStraight();
   void AutoTrench1();
   void AutoTrench2();
+  void AutoOldTrench();
   void AutoTrenchNinja1();
   void AutoTrenchNinja2();
   void AutoTrenchNinja3();
@@ -95,7 +98,7 @@ class Robot : public frc::TimedRobot {
 
 
   enum AutoRoutine {
-    Straight, SideTrench, SideTrench8, TrenchRun6, TrenchRun8, TrenchNinja5, TrenchNinjaTrench, TrenchNinjaGenerator8 
+    Straight, SideTrench, SideTrench8, TrenchRun6, TrenchRun8, TrenchNinja5, TrenchNinjaTrench, TrenchNinjaGenerator8, Dev 
   };
   AutoRoutine _routine;
   bool _autoWaitForShooter;
@@ -113,6 +116,7 @@ class Robot : public frc::TimedRobot {
   const std::string kAutoNameTrenchNinja1 = "Trench Ninja";
   const std::string kAutoNameTrenchNinja2 = "Trench Ninja + trench";
   const std::string kAutoNameTrenchNinja3 = "Trench Ninja + 3 Generator";
+  const std::string kAutoNameDev = "Dev - NOT FOR FLIGHT!!!";
 
   std::string m_autoSelected;
   std::string m_autoFireModeSelected;
@@ -124,6 +128,9 @@ class Robot : public frc::TimedRobot {
   frc::XboxController stick3{3};
   frc::XboxController stick4{4};
 
+  int _driverPOVLast, _copilotPOVLast;
+  bool _driverPOVChanged, _copilotPOVChanged; 
+
   frc::Compressor c{0};
   frc::Solenoid _feederPiston{0};
   bool _feederDown;
@@ -131,8 +138,11 @@ class Robot : public frc::TimedRobot {
   const double MinFeederDownTime = .5;
 
   MTDifferential drive{11,13,10,12,1};
+  bool _lowSpeed;
   frc::Timer timer{};
   int state = 0;
+
+  const double AutoFeederSpeed = .45;
 
   MTPath tragTool{6.0, 2048.0,10.3896};//6" wheel diameter, encoder resolution 2048, gear ratio= 10.3896
   BufferedTrajectoryPointStream left_bufferedStream{};
@@ -153,8 +163,11 @@ class Robot : public frc::TimedRobot {
   frc::Timer _shooterTimer{};
   std::shared_timed_mutex _shooterThreadMutex;
   bool _autotrack ;
+  bool _lastAutoTrack;
   double _shooterThreadPeriod;
   double _targetAngle;
+
+  bool _climbing;
 
   Periscope periscope{50,51};
 
@@ -162,6 +175,7 @@ class Robot : public frc::TimedRobot {
 
   Indexer indexer{30,31,32};
   frc::Timer indexerS1Timer{};
+  bool _useAutoIndex;
 
   MTTurretShooter shooter{20,21,22,2};
 

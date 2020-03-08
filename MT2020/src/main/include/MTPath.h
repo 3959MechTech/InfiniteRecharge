@@ -36,6 +36,6 @@ class MTPath {
       };
   
   void GetStreamFromArray(BufferedTrajectoryPointStream& stream, const double traj[][5], int trajLen, bool left, bool forward);
-  
+  void GetStreamFromArray(BufferedTrajectoryPointStream& stream, const double traj[][8], int trajLen, bool left);
   
 };

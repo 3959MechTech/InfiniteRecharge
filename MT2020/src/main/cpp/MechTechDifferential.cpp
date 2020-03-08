@@ -88,6 +88,8 @@ MTDifferential::MTDifferential(int rightmaster, int rightslave, int leftmaster, 
     /* Configure auxPIDPolarity to match the drive train */
     _rm_auto.auxPIDPolarity = false;
 
+    _rm.SetStatusFramePeriod(StatusFrame::Status_14_Turn_PIDF1_, 20);
+
     //Turn down un-needed data on Can Bus
     _ls.SetStatusFramePeriod(motorcontrol::StatusFrame::Status_1_General_, 255);
     _ls.SetStatusFramePeriod(motorcontrol::StatusFrame::Status_2_Feedback0_, 255);
@@ -152,6 +154,7 @@ void MTDifferential::StartMotionProfile(BufferedTrajectoryPointStream& leftStrea
     {
         UseDriveConfig();
     }
+    ResetEncoders();
 
     _lm.StartMotionProfile(leftStream, 10, mode);
     _rm.StartMotionProfile(rightStream, 10, mode);
@@ -273,7 +276,9 @@ void MTDifferential::SetHeading(double degrees)
 
 double MTDifferential::GetHeading()
 {
-    return _imu.GetFusedHeading();
+    double euler[3];
+    _imu.GetYawPitchRoll(euler);
+    return euler[0];
 }
 
 
@@ -417,7 +422,10 @@ void MTDifferential::SendData(std::string name)
             frc::SmartDashboard::PutString(name + " State", "unk");
 
     }
-
+    double euler[3];
+    _imu.GetYawPitchRoll(euler);
+    frc::SmartDashboard::PutNumber( "Drive heading", euler[0]);
+    
     frc::SmartDashboard::PutNumber("Drive IMU Heading", _imu.GetFusedHeading());
 
     frc::SmartDashboard::PutNumber("Left Drive Motor Speed", _lm.GetSelectedSensorVelocity());

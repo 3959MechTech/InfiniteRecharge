@@ -50,7 +50,10 @@ class MTTurretShooter {
 
   void zeroTurret();
 
+
+
   void updateTargetHeading(double degrees);
+  void setTargetHeading(double degrees);
   void advTrack();
   void track(MTPoseData drivePose, double x_angle, double y_angle);
   

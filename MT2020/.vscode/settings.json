@@ -16,6 +16,7 @@
   },
   "C_Cpp.default.configurationProvider": "vscode-wpilib",
   "files.associations": {
-    "shared_mutex": "cpp"
+    "shared_mutex": "cpp",
+    "*.inc": "cpp"
   }
 }

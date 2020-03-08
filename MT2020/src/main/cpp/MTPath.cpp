@@ -65,3 +65,51 @@ void MTPath::GetStreamFromArray(BufferedTrajectoryPointStream& stream, const dou
         
     }
 }
+
+
+void MTPath::GetStreamFromArray(BufferedTrajectoryPointStream& stream, const double traj[][8], int trajLen, bool left)
+{
+
+    TrajectoryPoint point; // temp for for loop, since unused params are initialized
+                           // automatically, you can alloc just one
+    MTPath::column2 pos, vel;
+    if(left)
+    {
+        pos = MTPath::column2::position_left_v2;
+        vel = MTPath::column2::velocity_left_v2;
+    }else
+    {
+        pos = MTPath::column2::position_right_v2;
+        vel = MTPath::column2::velocity_right_v2;
+    }
+    
+    /* clear the buffer, in case it was used elsewhere */
+    stream.Clear();
+    
+    /* Insert every point into buffer, no limit on size */
+    for (int i = 0; i < trajLen; ++i) {
+
+        double direction = +1;//direction and flip are covered in V2 format
+        double position = traj[i][pos];
+        double velocity = traj[i][vel];
+        int durationMilliseconds = traj[i][MTPath::column2::duration_v2];
+
+        /* for each point, fill our structure and pass it to API */
+        point.timeDur = durationMilliseconds;
+        point.position = direction * position * _ticksPerInch; // Convert Revolutions to
+                                                         // Units
+        point.velocity = direction * velocity * _ticksPerInch / 600.0; // Convert RPM to
+                                                                 // Units/100ms
+        point.auxiliaryPos = 0;
+        point.auxiliaryVel = 0;
+        point.profileSlotSelect0 = 0; /* which set of gains would you like to use [0,3]? */
+        point.profileSlotSelect1 = 0; /* which set of gains would you like to use [0,3]? */
+        point.zeroPos = (i == 0); /* set this to true on the first point */
+        point.isLastPoint = ((i + 1) == trajLen); /* set this to true on the last point */
+        point.arbFeedFwd = 0; /* you can add a constant offset to add to PID[0] output here */
+
+        stream.Write(point);
+
+        
+    }
+}

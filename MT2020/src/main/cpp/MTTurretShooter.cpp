@@ -22,8 +22,8 @@ MTTurretShooter::MTTurretShooter(int leftMotor, int rightMotor, int turretMotor,
     _rm.SetInverted(false);
     _lm.SetInverted(InvertType::OpposeMaster);//could be FollowMaster
     
-    _rm.Config_kF(0,.05,0);//old .04778
-    _rm.Config_kP(0,.06,0);
+    _rm.Config_kF(0,.0478,0);//old .04778
+    _rm.Config_kP(0,.1,0);
     _rm.Config_kI(0,.0,0);
     _rm.Config_kD(0,.0,0);
 
@@ -48,6 +48,9 @@ MTTurretShooter::MTTurretShooter(int leftMotor, int rightMotor, int turretMotor,
     _turretMotor.ConfigAllSettings(turretMotorConfig);
 
     _imu.SetYaw(0);
+
+    _turretMotor.ConfigReverseLimitSwitchSource(LimitSwitchSource::LimitSwitchSource_FeedbackConnector, LimitSwitchNormal_NormallyOpen);
+	_turretMotor.ConfigForwardLimitSwitchSource(LimitSwitchSource::LimitSwitchSource_FeedbackConnector, LimitSwitchNormal_NormallyOpen);
 
 
     //Turn down un-needed data on Can Bus
@@ -83,7 +86,9 @@ void MTTurretShooter::zeroTurret()
 
 double MTTurretShooter::GetHeading()
 {
-    return _imu.GetFusedHeading();
+    double euler[3];
+    _imu.GetYawPitchRoll(euler);
+    return euler[0];
 }
 
 void MTTurretShooter::spin(double speed)
@@ -104,7 +109,9 @@ void MTTurretShooter::setWheelSpeed(double speed)
 
 void MTTurretShooter::sendData(std::string name)
 {
-    frc::SmartDashboard::PutNumber(name + " heading", _imu.GetFusedHeading());
+    double euler[3];
+    _imu.GetYawPitchRoll(euler);
+    frc::SmartDashboard::PutNumber(name + " heading", euler[0]);
     switch(_imu.GetState())
     {
         case PigeonIMU::PigeonState::Initializing: 
@@ -131,6 +138,8 @@ void MTTurretShooter::sendData(std::string name)
     frc::SmartDashboard::PutNumber(name + " Speed Error", _rm.GetClosedLoopError());
     frc::SmartDashboard::PutNumber(name + " Temp (C)", _rm.GetTemperature());
     frc::SmartDashboard::PutBoolean(name + " Ready", isShooterReady());
+    frc::SmartDashboard::PutBoolean(name + " limit F Turret", _turretMotor.GetSensorCollection().IsFwdLimitSwitchClosed());
+	frc::SmartDashboard::PutBoolean(name + " limit R Turret", _turretMotor.GetSensorCollection().IsRevLimitSwitchClosed());
 
 
 } // namespace name
@@ -148,6 +157,13 @@ void MTTurretShooter::updateTargetHeading(double offset)
     {
         _turretMotor.Set(ControlMode::Position, _targetHeading);
     }
+}
+
+void MTTurretShooter::setTargetHeading(double degrees)
+{
+    _targetHeading = degrees*(8192.0/360.0);
+    _turretMotor.Set(ControlMode::Position, _targetHeading);
+
 }
 
 void MTTurretShooter::track(MTPoseData drivePose, double x_angle, double y_angle)

@@ -1,0 +1,339 @@
+{
+    "_version": "1",
+    "groups": [
+        {
+            "name": "StraightTrenchRun",
+            "paths": [
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "f1",
+                    "points": [
+                        {
+                            "heading": 0,
+                            "x": 147,
+                            "y": 287
+                        },
+                        {
+                            "heading": 0,
+                            "x": 260,
+                            "y": 287
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                },
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "f2",
+                    "points": [
+                        {
+                            "heading": 0,
+                            "x": 260,
+                            "y": 287
+                        },
+                        {
+                            "heading": 0,
+                            "x": 299,
+                            "y": 287
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                }
+            ]
+        },
+        {
+            "name": "TrenchRun",
+            "paths": [
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "f1",
+                    "points": [
+                        {
+                            "heading": 0,
+                            "x": 147,
+                            "y": 226.8
+                        },
+                        {
+                            "heading": 0,
+                            "x": 250,
+                            "y": 287
+                        },
+                        {
+                            "heading": 0,
+                            "x": 299,
+                            "y": 287
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                },
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "r2",
+                    "points": [
+                        {
+                            "heading": 180,
+                            "x": 299,
+                            "y": 287
+                        },
+                        {
+                            "heading": 180,
+                            "x": 190,
+                            "y": 250
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                },
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "f3",
+                    "points": [
+                        {
+                            "heading": 0,
+                            "x": 190,
+                            "y": 250
+                        },
+                        {
+                            "heading": -68,
+                            "x": 242,
+                            "y": 231
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                },
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "r4",
+                    "points": [
+                        {
+                            "heading": 112,
+                            "x": 242,
+                            "y": 231
+                        },
+                        {
+                            "heading": -180,
+                            "x": 200,
+                            "y": 235
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                }
+            ]
+        },
+        {
+            "name": "TrenchNinja",
+            "paths": [
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "f1",
+                    "points": [
+                        {
+                            "heading": 0,
+                            "x": 147,
+                            "y": 28
+                        },
+                        {
+                            "heading": 0,
+                            "x": 235,
+                            "y": 28
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                },
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "r2t",
+                    "points": [
+                        {
+                            "heading": 180,
+                            "x": 235,
+                            "y": 28
+                        },
+                        {
+                            "heading": 90,
+                            "x": 171,
+                            "y": 170
+                        },
+                        {
+                            "heading": -180,
+                            "x": 147,
+                            "y": 226.8
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                },
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "r2g",
+                    "points": [
+                        {
+                            "heading": 180,
+                            "x": 235,
+                            "y": 28
+                        },
+                        {
+                            "heading": 160,
+                            "x": 166,
+                            "y": 171
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                },
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "f3g",
+                    "points": [
+                        {
+                            "heading": -20,
+                            "x": 166,
+                            "y": 171
+                        },
+                        {
+                            "heading": 22,
+                            "x": 215,
+                            "y": 145.96005154639172
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                },
+                {
+                    "constraints": [
+                    ],
+                    "endangle": 0,
+                    "endangledelay": 0,
+                    "endvelocity": 0,
+                    "flags": [
+                    ],
+                    "maxacceleration": 1500,
+                    "maxjerk": 3000,
+                    "maxvelocity": 150,
+                    "name": "r4g",
+                    "points": [
+                        {
+                            "heading": -158,
+                            "x": 215,
+                            "y": 146
+                        },
+                        {
+                            "heading": 160,
+                            "x": 175,
+                            "y": 155
+                        }
+                    ],
+                    "startangle": 0,
+                    "startangledelay": 0,
+                    "startvelocity": 0
+                }
+            ]
+        }
+    ],
+    "outdir": "/Users/Jim/frc 2020/Xero Paths/LR Paths"
+}
